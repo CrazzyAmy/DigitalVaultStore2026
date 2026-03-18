@@ -1,12 +1,17 @@
-﻿namespace DigitalProject.Models
+﻿
+
+using DigitalProject.Domain;
+
+namespace DigitalProject.Models
 {
-    public class UserAuthProvider
+    public partial class UserAuthProvider
     {
-       public int ProviderId { get; set; }
+        public Guid Id { get; set; }
 
         public int UserId { get; set; }
 
-        public string Provider  { get; set; } = null!;
+
+        public AuthProvider Provider { get; set; } 
 
         public string? ProviderKey { get; set; }
 
