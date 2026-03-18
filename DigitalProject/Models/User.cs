@@ -1,0 +1,26 @@
+﻿using DigitalProject.Domain;
+
+namespace DigitalProject.Models
+{
+    public class User
+    {
+        public int UserId { get; set; }
+
+        public string Email { get; set; } = null!;
+
+        public string DisplayName { get; set; } = null!;
+
+        public string AvatarUrl { get; set; }
+
+        public UserRole Role { get; set; } = UserRole.user;
+
+        public bool IsActive { get; set; } = true;
+
+        public DateTime CreateAt { get; set; } = DateTime.UtcNow;
+
+        public ICollection<UserAuthProvider> UserAuthProviders { get; set; } = new List<UserAuthProvider>();
+
+        public ICollection<Order>Orders { get; set; } = new List<Order>();  
+
+    }
+}
