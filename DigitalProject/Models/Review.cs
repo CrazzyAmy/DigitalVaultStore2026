@@ -1,5 +1,4 @@
-using DigitalProject.Domain;
-
+﻿using DigitalProject.Domain;
 namespace DigitalProject.Models
 {
     public partial class Review
@@ -10,13 +9,10 @@ namespace DigitalProject.Models
         public Guid OrderId { get; set; }
         public int Rating { get; set; }
         public string? Comment { get; set; }
-        public DateTime CreateAt { get; set; }
-        
-        
-        public User User { get; set; }
-        public Product Product { get; set; }
-        public Order Order { get; set; }
+        public DateTime CreatedAt { get; set; }  // ✅ 改成 CreatedAt
 
-
+        public User User { get; set; } = null!;
+        public Product Product { get; set; } = null!;
+        public Order Order { get; set; } = null!;
     }
 }

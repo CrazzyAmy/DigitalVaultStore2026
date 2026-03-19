@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<DigitalVaultStoreDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DigitalProjectContext")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DbContext")));
 
 // Add services to the container.
 
