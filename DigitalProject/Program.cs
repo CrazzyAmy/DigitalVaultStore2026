@@ -1,4 +1,9 @@
+using DigitalProject.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddDbContext<DigitalVaultStoreDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DigitalProjectContext")));
 
 // Add services to the container.
 
