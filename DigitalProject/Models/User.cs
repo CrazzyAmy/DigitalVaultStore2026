@@ -7,11 +7,16 @@ namespace DigitalProject.Models
         public string Email { get; set; } = null!;
         public string DisplayName { get; set; } = null!;
         public string? AvatarUrl { get; set; }
-        public UserRole Role { get; set; } = UserRole.user;
+        public UserRole Role { get; set; } = UserRole.User;
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; }
 
-        public ICollection<UserAuthProvider> UserAuthProviders { get; set; } = new List<UserAuthProvider>();
+        // v4 新增：合併自 UserAuthProviders
+        public AuthProvider Provider { get; set; } = AuthProvider.Local;
+        public string? ProviderKey { get; set; }
+        public string? PasswordHash { get; set; }
+
+
         public ICollection<Order> Orders { get; set; } = new List<Order>();
         public ICollection<Review> Reviews { get; set; } = new List<Review>();
         public ICollection<Payment> VoidedPayments { get; set; } = new List<Payment>();
