@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DigitalProject.Migrations
 {
     [DbContext(typeof(DigitalVaultStoreDbContext))]
-    [Migration("20260319033709_InitialCreate")]
+    [Migration("20260323075822_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -257,23 +257,6 @@ namespace DigitalProject.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("DigitalProject.Models.UserAuthProvider", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
 
@@ -283,14 +266,12 @@ namespace DigitalProject.Migrations
                     b.Property<string>("ProviderKey")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
-
-                    b.ToTable("UserAuthProviders");
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("DigitalProject.Models.Order", b =>
@@ -378,17 +359,6 @@ namespace DigitalProject.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("DigitalProject.Models.UserAuthProvider", b =>
-                {
-                    b.HasOne("DigitalProject.Models.User", "User")
-                        .WithMany("UserAuthProviders")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("DigitalProject.Models.Category", b =>
                 {
                     b.Navigation("Products");
@@ -415,8 +385,6 @@ namespace DigitalProject.Migrations
                     b.Navigation("Orders");
 
                     b.Navigation("Reviews");
-
-                    b.Navigation("UserAuthProviders");
 
                     b.Navigation("VoidedPayments");
                 });
