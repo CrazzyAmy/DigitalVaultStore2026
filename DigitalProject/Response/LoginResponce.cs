@@ -1,4 +1,4 @@
-﻿namespace DigitalProject.Models
+﻿namespace DigitalProject.Response
 {
     public class LoginResponce
     {
