@@ -25,7 +25,9 @@ namespace DigitalProject.Repositories.Prouduct
                     Name = p.Name,
                     Description = p.Description,
                     Price = p.Price,
-                    ThumbnailUrl = p.ThumbnailUrl,
+                    ThumbnailUrl = string.IsNullOrEmpty(p.ThumbnailUrl)
+        ? $"https://picsum.photos/400/220?random={p.Id}"
+        : p.ThumbnailUrl,
                     DownloadUrl = p.DownloadUrl,
                     IsPublished = p.IsPublished,
                     CreatedAt = p.CreatedAt,
@@ -47,7 +49,9 @@ namespace DigitalProject.Repositories.Prouduct
                  Name = p.Name,
                  Description = p.Description,
                  Price = p.Price,
-                 ThumbnailUrl = p.ThumbnailUrl,
+                 ThumbnailUrl = string.IsNullOrEmpty(p.ThumbnailUrl)
+        ? $"https://picsum.photos/400/220?random={p.Id}"
+        : p.ThumbnailUrl,
                  DownloadUrl = p.DownloadUrl,
                  IsPublished = p.IsPublished,
                  CreatedAt = p.CreatedAt,
@@ -68,7 +72,9 @@ namespace DigitalProject.Repositories.Prouduct
               Name = p.Name,
               Description = p.Description,
               Price = p.Price,
-              ThumbnailUrl = p.ThumbnailUrl,
+              ThumbnailUrl = string.IsNullOrEmpty(p.ThumbnailUrl)
+        ? $"https://picsum.photos/400/220?random={p.Id}"
+        : p.ThumbnailUrl,
               DownloadUrl = p.DownloadUrl,
               IsPublished = p.IsPublished,
               CreatedAt = p.CreatedAt,
