@@ -17,12 +17,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Interface\" />
     <Folder Include="Middlewarer\" />
     <Folder Include="Helper\" />
     <Folder Include="Migrations\" />
-    <Folder Include="Services\" />
-    <Folder Include="Repositories\" />
+    <Folder Include="Request\" />
   </ItemGroup>
 
 </Project>
