@@ -84,5 +84,27 @@ namespace DigitalProject.Repositories.Prouduct
           .FirstOrDefaultAsync();
         }
 
+        public async Task<IEnumerable<ProductResponse>> GetByIdsAsync(List<Guid> ids)
+        {
+            return await _context.Products
+                 .Where(p => ids.Contains(p.Id) && p.IsPublished)
+                 .Include(p => p.Category)
+                 .Select(p => new ProductResponse
+                 {
+                     Id = p.Id,
+                     Name = p.Name,
+                     Description = p.Description,
+                     Price = p.Price,
+                     ThumbnailUrl = string.IsNullOrEmpty(p.ThumbnailUrl)
+                     ? $"https://picsum.photos/400/220?random={p.Id}"
+                     : p.ThumbnailUrl,
+                     DownloadUrl = p.DownloadUrl,
+                     IsPublished = p.IsPublished,
+                     CreatedAt = p.CreatedAt,
+                     CategoryId = p.CategoryId,
+                     CategoryName = p.Category.Name
+                 })
+                   .ToListAsync();
+        }
     }
 }

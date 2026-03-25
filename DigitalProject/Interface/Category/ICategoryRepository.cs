@@ -1,8 +1,7 @@
-﻿
-using DigitalProject.Models;
+﻿using DigitalProject.Models;
 using DigitalProject.Response;
 
-namespace DigitalProject.Interface.Categoy
+namespace DigitalProject.Interface.Category
 {
     public interface ICategoryRepository
     {

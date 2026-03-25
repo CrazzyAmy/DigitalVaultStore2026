@@ -27,7 +27,6 @@
   <ItemGroup>
     <Folder Include="Middlewarer\" />
     <Folder Include="Migrations\" />
-    <Folder Include="Request\" />
   </ItemGroup>
 
 </Project>
