@@ -1,5 +1,5 @@
 ﻿using DigitalProject.Interface;
-using DigitalProject.Interface.Categoy;
+using DigitalProject.Interface.Category;
 using DigitalProject.Models;
 using DigitalProject.Response;
 

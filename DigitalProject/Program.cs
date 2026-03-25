@@ -1,6 +1,7 @@
 ﻿using DigitalProject.Data;
 using DigitalProject.Interface;
-using DigitalProject.Interface.Categoy;
+using DigitalProject.Interface.Category;
+using DigitalProject.Interface.Orders;
 using DigitalProject.Interface.Prouduct;
 using DigitalProject.Repositories;
 using DigitalProject.Repositories.Prouduct;
@@ -30,6 +31,8 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();      
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAuthService, AuthService>();            
