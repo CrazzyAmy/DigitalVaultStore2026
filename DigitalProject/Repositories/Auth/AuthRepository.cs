@@ -1,6 +1,5 @@
 ﻿using DigitalProject.Data;
 using DigitalProject.Interface;
-using DigitalProject.Interface.User;
 using DigitalProject.Models;
 using Microsoft.EntityFrameworkCore;
 using DigitalProject.Interface.Auth;
