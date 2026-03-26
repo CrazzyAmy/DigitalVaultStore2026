@@ -4,12 +4,15 @@ using DigitalProject.Interface.Auth;
 using DigitalProject.Interface.Category;
 using DigitalProject.Interface.Orders;
 using DigitalProject.Interface.Prouduct;
+using DigitalProject.Interface.Reviews;
 using DigitalProject.Middleware;
 using DigitalProject.Repositories;
 using DigitalProject.Repositories.Prouduct;
+using DigitalProject.Repositories.Reviews;
 using DigitalProject.Security;
 using DigitalProject.Services;
 using DigitalProject.Services.Prouduct;
+using DigitalProject.Services.Reviews;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -28,12 +31,14 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 
 // ── Services ──────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IReviewService, ReviewService>();
 
 // ── Security ──────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IJwtHelper, JwtHelper>();
