@@ -1,65 +1,102 @@
 ﻿using DigitalProject.Data;
 using DigitalProject.Interface;
+using DigitalProject.Interface.Auth;
 using DigitalProject.Interface.Category;
 using DigitalProject.Interface.Orders;
 using DigitalProject.Interface.Prouduct;
+using DigitalProject.Middleware;
 using DigitalProject.Repositories;
 using DigitalProject.Repositories.Prouduct;
-//using DigitalProject.Services.User;
+using DigitalProject.Security;
+using DigitalProject.Services;
 using DigitalProject.Services.Prouduct;
-using Microsoft.EntityFrameworkCore;
-using System.Text;
-using DigitalProject;
-using FluentValidation;
-using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using DigitalProject.Interface.User;
-using DigitalProject.Security;
-// using DigitalProject.Interface.Auth;
-using DigitalProject.Interface.Auth;
-using DigitalProject.Auth.Services;
-using DigitalProject.Services;
+using System.Text;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// ── Database ──────────────────────────────────────────────────────────────────
 builder.Services.AddDbContext<DigitalVaultStoreDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DbContext")));
 
-// Add services to the container.
+// ── Repositories ──────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
-builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-builder.Services.AddScoped<IOrderService, OrderService>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();      
-builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IAuthService, AuthService>();            
-builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
+// ── Services ──────────────────────────────────────────────────────────────────
+builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+
+// ── Security ──────────────────────────────────────────────────────────────────
+builder.Services.AddScoped<IJwtHelper, JwtHelper>();
+builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
+
+// ── CORS ──────────────────────────────────────────────────────────────────────
 builder.Services.AddCors(options =>
-{
     options.AddPolicy("AllowFrontend", policy =>
-    {
         policy.WithOrigins("http://localhost:5173")
               .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
-});
-// ── FluentValidation ──────────────────────────────────────────────────────────
-builder.Services.AddFluentValidationAutoValidation();
-//builder.Services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
+              .AllowAnyMethod()));
 
+// ── JWT ───────────────────────────────────────────────────────────────────────
+var jwtSettings = builder.Configuration.GetSection("JwtTokenSettings");
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+    .AddJwtBearer(options =>
+    {
+        options.RequireHttpsMetadata = false;
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            RequireExpirationTime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings["Issuer"],
+            ValidAudience = jwtSettings["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(
+                                           Encoding.UTF8.GetBytes(jwtSettings["IssuerSigningKey"]!)),
+            ClockSkew = TimeSpan.Zero,
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnChallenge = context =>
+            {
+                options.IncludeErrorDetails = false;
+                context.HandleResponse();
+                context.Response.ContentType = "application/json";
+                context.Response.StatusCode = 401;
+                var body = new
+                {
+                    error = "Unauthorized",
+                    error_description = "Authentication failed"
+                };
+                return context.Response.WriteAsync(JsonSerializer.Serialize(body));
+            }
+        };
+    });
+
+builder.Services.AddAuthorization();
+
+// ── Controllers + Swagger ─────────────────────────────────────────────────────
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "DigitalProject API", Version = "v1" });
-
-    // Swagger UI 支援貼入 JWT Token 測試
-    var scheme = new OpenApiSecurityScheme
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
         Type = SecuritySchemeType.Http,
@@ -67,8 +104,7 @@ builder.Services.AddSwaggerGen(c =>
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
         Description = "輸入 JWT Token，格式：Bearer {token}",
-    };
-    c.AddSecurityDefinition("Bearer", scheme);
+    });
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         [new OpenApiSecurityScheme
@@ -80,31 +116,13 @@ builder.Services.AddSwaggerGen(c =>
             }
         }] = []
     });
-});
-// ── JWT Auth ──────────────────────────────────────────────────────────────────
-var jwtSecret = builder.Configuration["Jwt:Secret"]
-    ?? throw new InvalidOperationException("Jwt:Secret 未設定");
+}); // ← SwaggerGen 在這裡結束
 
+// ── Build ─────────────────────────────────────────────────────────────────────
+var app = builder.Build(); // ← 移到這裡
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(opt =>
-    {
-        opt.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                                           Encoding.UTF8.GetBytes(jwtSecret)),
-        };
-    });
+app.UseMiddleware<GlobalExceptionMiddleware>();
 
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -113,13 +131,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
-//app.UseAuthentication();
-
-
-
-builder.Services.AddAuthorization();
-
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
-
 app.Run();

@@ -1,90 +1,71 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using DigitalProject.Domain;
+﻿using DigitalProject.Domain;
+using DigitalProject.Exceptions;
+using DigitalProject.Interface;
+using DigitalProject.Interface.Auth;
+using DigitalProject.Models;
 using DigitalProject.Request;
 using DigitalProject.Response;
-using DigitalProject.Interface;
-using DigitalProject.Interface.User;
-using DigitalProject.Models;
 using DigitalProject.Security;
 using Microsoft.IdentityModel.Tokens;
-using DigitalProject.Interface.Auth;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
-namespace DigitalProject.Auth.Services
+namespace DigitalProject.Services
 {
-    public class AuthService(
-        IUserRepository userRepo,
-        IPasswordHasher passwordHasher,
-        IConfiguration config) : IAuthService
+    public class AuthService : IAuthService
     {
-        public async Task<AuthResponse> RegisterAsync(RegisterRequest req)
+        private readonly IUserRepository _userRepository;
+        private readonly IPasswordHasher _passwordHasher;
+        private readonly IJwtHelper _jwtHelper;
+        public AuthService(IUserRepository userRepository, IPasswordHasher passwordHasher, IJwtHelper jwtHelper)
         {
-            if (await userRepo.ExistsByEmailAsync(req.Email))
-                throw new InvalidOperationException("此 Email 已被註冊");
-
-            DigitalProject.Models.User user = new User
+            _userRepository = userRepository;
+            _passwordHasher = passwordHasher;
+            _jwtHelper = jwtHelper;
+        } 
+        public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
+        {
+            // 1. 檢查 Email 是否已存在
+            if(await _userRepository.IsEmailExistsAsync(request.Email))
+                throw new AppException("此 Email 已被註冊");
+            // 2. 建立 User
+            var user = new User
             {
                 Id = Guid.NewGuid(),
-                Email = req.Email.ToLowerInvariant(),
-                DisplayName = req.DisplayName,
-                Role = UserRole.User,
+                Email = request.Email,
+                DisplayName = request.DisplayName,
+                PasswordHash = _passwordHasher.Hash(request.Password),
                 Provider = AuthProvider.Local,
-                PasswordHash = passwordHasher.Hash(req.Password),  // Argon2id
+                Role = UserRole.User,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
             };
-
-            await userRepo.AddAsync(user);
-            await userRepo.SaveChangesAsync();
-
-            return new AuthResponse(GenerateToken(user), ToResponse(user));
-        }
-
-        public async Task<AuthResponse> LoginAsync(LoginRequest req)
-        {
-            var user = await userRepo.GetByEmailAsync(req.Email.ToLowerInvariant())
-                ?? throw new UnauthorizedAccessException("帳號或密碼錯誤");
-
-            if (!user.IsActive)
-                throw new UnauthorizedAccessException("帳號已被停用");
-
-            if (user.Provider != AuthProvider.Local || user.PasswordHash is null)
-                throw new UnauthorizedAccessException("此帳號請使用 Google 登入");
-
-            // Argon2id 驗證（constant-time compare，防 timing attack）
-            if (!passwordHasher.Verify(req.Password, user.PasswordHash))
-                throw new UnauthorizedAccessException("帳號或密碼錯誤");
-
-            return new AuthResponse(GenerateToken(user), ToResponse(user));
-        }
-
-        // ── Private ───────────────────────────────────────────────────────────
-
-        private string GenerateToken(User user)
-        {
-            var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(config["Jwt:Secret"]!));
-
-            var claims = new[]
+            await _userRepository.CreateAsync(user);
+            return new RegisterResponse
             {
-                new Claim(JwtRegisteredClaimNames.Sub,   user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(ClaimTypes.Role,               user.Role.ToString()),
-                new Claim("displayName",                 user.DisplayName),
+                Message = "註冊成功，請使用 Email 登入",
+                Email = user.Email,
+                DisplayName = user.DisplayName,
             };
+        }
+        public async Task<AuthResponse> LoginAsync(LoginRequest request)
+        {
+            //1.查找User
+            var user = await _userRepository.GetByEmailAsync(request.Email);
+            if (user == null)
+                throw new AppException("Email或密碼錯誤");
+            // 2. 驗證密碼
+            if (!_passwordHasher.Verify(request.Password, user.PasswordHash!))
+                throw new AppException("Email 或密碼錯誤", 401);
+            // 3. 確認帳號啟用
+            if (!user.IsActive)
+                throw new AppException("此帳號已被停用", 401);
+            // 4. 回傳 JWT
+            return _jwtHelper.GenerateToken(user); 
 
-            var token = new JwtSecurityToken(
-                issuer: config["Jwt:Issuer"],
-                audience: config["Jwt:Audience"],
-                claims: claims,
-                expires: DateTime.UtcNow.AddDays(7),
-                signingCredentials: new SigningCredentials(key, SecurityAlgorithms.HmacSha256));
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        private static UserResponse ToResponse(User u) =>
-            new(u.Id, u.Email, u.DisplayName, u.AvatarUrl, u.Role);
+       
     }
 }

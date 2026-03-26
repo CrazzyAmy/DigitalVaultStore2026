@@ -5,7 +5,8 @@ namespace DigitalProject.Interface.Auth
 {
     public interface IAuthService
     {
-        Task<AuthResponse> RegisterAsync(RegisterRequest req);
-        Task<AuthResponse> LoginAsync(LoginRequest req);
+        Task<RegisterResponse> RegisterAsync(RegisterRequest request);
+        Task<AuthResponse> LoginAsync(LoginRequest request);
+
     }
 }

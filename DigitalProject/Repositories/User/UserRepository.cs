@@ -1,26 +1,39 @@
 ﻿using DigitalProject.Data;
 using DigitalProject.Interface;
-using DigitalProject.Interface.User;
 using DigitalProject.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigitalProject.Repositories
 {
-    public class UserRepository(DigitalVaultStoreDbContext db) : IUserRepository
+    public class UserRepository : IUserRepository
     {
-        public Task<User?> GetByIdAsync(Guid id) =>
-            db.Users.FindAsync(id).AsTask();
+        private readonly DigitalVaultStoreDbContext _dbcontext;
+        public UserRepository(DigitalVaultStoreDbContext dbcontext)
+        {
+            _dbcontext = dbcontext;
+        }
 
-        public Task<User?> GetByEmailAsync(string email) =>
-            db.Users.FirstOrDefaultAsync(u => u.Email == email);
+        public async Task CreateAsync(User user)
+        {
+            await _dbcontext.Users.AddAsync(user);
+            await _dbcontext.SaveChangesAsync();
+        }
 
-        public Task<bool> ExistsByEmailAsync(string email) =>
-            db.Users.AnyAsync(u => u.Email == email);
+        public async Task<User?> GetByEmailAsync(string email)
+         => await _dbcontext.Users
+                .FirstOrDefaultAsync(u => u.Email == email);
+        public async Task<User?> GetByIdAsync(Guid id)
+            => await _dbcontext.Users.FindAsync(id);
 
-        public async Task AddAsync(User user) =>
-            await db.Users.AddAsync(user);
+        public async Task<bool> IsEmailExistsAsync(string email)
+          => await _dbcontext.Users
+              .AnyAsync(u => u.Email == email);
 
-        public Task SaveChangesAsync() =>
-            db.SaveChangesAsync();
+        public async Task UpdateAsync(User user)
+        {
+            _dbcontext.Users.Update(user);
+            await _dbcontext.SaveChangesAsync();
+        }
     }
+
 }

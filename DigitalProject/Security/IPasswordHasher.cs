@@ -12,5 +12,7 @@ namespace DigitalProject.Security
         // 輸入: password = 使用者輸入的明文密碼, storedHash = 資料庫存的雜湊字串
         // 輸出: 驗證成功回傳 true，失敗回傳 false
         bool Verify(string password, string hash);
+
+
     }
 }

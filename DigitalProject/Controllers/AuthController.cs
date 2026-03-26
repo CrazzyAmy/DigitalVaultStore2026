@@ -1,59 +1,35 @@
-﻿using System.Security.Claims;
-using DigitalProject.Domain;
+﻿// Controllers/AuthController.cs
 using DigitalProject.Request;
-using DigitalProject.Response;
-using DigitalProject.Interface;
 using DigitalProject.Interface.Auth;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DigitalProject.Controllers
 {
     [ApiController]
-    [Route("api/auth")]
-    public class AuthController(IAuthService authService) : ControllerBase
+    [Route("api/[controller]")]
+    public class AuthController : ControllerBase
     {
-        /// <summary>
-        /// 註冊新帳號（Email / Password）
-        /// </summary>
+        private readonly IAuthService _authService;
+
+        public AuthController(IAuthService authService)
+        {
+            _authService = authService;
+        }
+
+        // POST /api/auth/register
         [HttpPost("register")]
-        [ProducesResponseType(typeof(AuthResponse), 200)]
-        [ProducesResponseType(400)]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest req)
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            var result = await authService.RegisterAsync(req);
+            var result = await _authService.RegisterAsync(request);
             return Ok(result);
         }
 
-        /// <summary>
-        /// 登入，回傳 JWT Token
-        /// </summary>
+        // POST /api/auth/login
         [HttpPost("login")]
-        [ProducesResponseType(typeof(AuthResponse), 200)]
-        [ProducesResponseType(401)]
-        public async Task<IActionResult> Login([FromBody] LoginRequest req)
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            var result = await authService.LoginAsync(req);
+            var result = await _authService.LoginAsync(request);
             return Ok(result);
-        }
-
-        /// <summary>
-        /// 取得目前登入使用者資訊（需帶 JWT）
-        /// </summary>
-        [HttpGet("me")]
-        [Authorize]
-        [ProducesResponseType(typeof(UserResponse), 200)]
-        [ProducesResponseType(401)]
-        public IActionResult Me()
-        {
-            var user = new UserResponse(
-                Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!),
-                User.FindFirstValue(ClaimTypes.Email)!,
-                User.FindFirstValue("displayName")!,
-                null,
-                Enum.Parse<UserRole>(User.FindFirstValue(ClaimTypes.Role)!));
-
-            return Ok(user);
         }
     }
 }

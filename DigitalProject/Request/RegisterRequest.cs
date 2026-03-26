@@ -2,9 +2,10 @@
 
 namespace DigitalProject.Request
 {
-    public record RegisterRequest(
-        string Email,
-        string DisplayName,
-        string Password
-    );
+    public class RegisterRequest
+    {
+        public string Email { get; set; } = null!;
+        public string DisplayName { get; set; } = null!;
+        public string Password { get; set; } = null!;
+    }
 }

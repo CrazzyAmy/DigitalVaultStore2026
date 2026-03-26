@@ -3,14 +3,14 @@ using Microsoft.AspNetCore.Mvc;
 using DigitalProject.Models;
 using DigitalProject.Response;
 
-namespace DigitalProject.Interface.User
+namespace DigitalProject.Interface
 {
     public interface IUserRepository
     {
-        Task<DigitalProject.Models.User?> GetByIdAsync(Guid id);
-        Task<DigitalProject.Models.User?> GetByEmailAsync(string email);
-        Task<bool> ExistsByEmailAsync(string email);
-        Task AddAsync(DigitalProject.Models.User user);
-        Task SaveChangesAsync();
+        Task<User?> GetByIdAsync(Guid id);
+        Task<User?> GetByEmailAsync(string email);
+        Task<bool> IsEmailExistsAsync(string email);
+        Task CreateAsync(User user);
+        Task UpdateAsync(User user);
     }
 }
