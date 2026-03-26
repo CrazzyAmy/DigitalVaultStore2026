@@ -69,7 +69,7 @@ namespace DigitalProject.Security
                 expires: expiry,
                 signingCredentials: credentials
             );
-            //將 JWT Token 物件 轉換成 字串
+             //將 JWT Token 物件 轉換成 字串
             var tokenHandler = new JwtSecurityTokenHandler();
             var encodedToken = tokenHandler.WriteToken(token);
 
