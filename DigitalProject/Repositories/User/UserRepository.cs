@@ -1,5 +1,5 @@
 ﻿using DigitalProject.Data;
-using DigitalProject.Interface;
+using DigitalProject.Interface.User;
 using DigitalProject.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +8,7 @@ namespace DigitalProject.Repositories
     public class UserRepository : IUserRepository
     {
         private readonly DigitalVaultStoreDbContext _dbcontext;
+
         public UserRepository(DigitalVaultStoreDbContext dbcontext)
         {
             _dbcontext = dbcontext;
@@ -29,9 +30,19 @@ namespace DigitalProject.Repositories
           => await _dbcontext.Users
               .AnyAsync(u => u.Email == email);
 
-        public async Task UpdateAsync(User user)
+        public async Task UpdateDisplayNameAsync(Guid id, string displayName)
         {
-            _dbcontext.Users.Update(user);
+            var user = await _dbcontext.Users.FindAsync(id);
+            if (user == null) return;
+            user.DisplayName = displayName;
+            await _dbcontext.SaveChangesAsync();
+        }
+
+        public async Task UpdatePasswordAsync(Guid id, string passwordHash)
+        {
+            var user = await _dbcontext.Users.FindAsync(id);
+            if (user == null) return;
+            user.PasswordHash = passwordHash;
             await _dbcontext.SaveChangesAsync();
         }
     }

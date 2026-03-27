@@ -2,6 +2,7 @@
 using DigitalProject.Exceptions;
 using DigitalProject.Interface;
 using DigitalProject.Interface.Auth;
+using DigitalProject.Interface.User;
 using DigitalProject.Models;
 using DigitalProject.Request;
 using DigitalProject.Response;
@@ -30,7 +31,7 @@ namespace DigitalProject.Services
             if(await _userRepository.IsEmailExistsAsync(request.Email))
                 throw new AppException("此 Email 已被註冊");
             // 2. 建立 User
-            var user = new User
+            var user = new Models.User
             {
                 Id = Guid.NewGuid(),
                 Email = request.Email,

@@ -16,6 +16,7 @@ namespace DigitalProject.Controllers
         {
             _orderService = orderService;
         }
+
         // POST api/order
         [HttpPost]
         [Authorize]
@@ -28,13 +29,14 @@ namespace DigitalProject.Controllers
             var order = await _orderService.CreateOrderAsync(userId, request);
             return Ok(order);
         }
-            // GET api/order
-            [HttpGet]
+           // GET api/order
+         [HttpGet]
         [Authorize]
         public async Task<IActionResult> GetMyOrders()
             {
             //var userId = Guid.Parse("1ED3C1A5-5D92-4D42-B29B-60957E3400A2");
             var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
             var orders = await _orderService.GetUserOrdersAsync(userId);
                 return Ok(orders);
             }

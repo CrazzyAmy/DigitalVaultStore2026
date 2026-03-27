@@ -1,16 +1,18 @@
 ﻿using DigitalProject.Request;
 using Microsoft.AspNetCore.Mvc;
-using DigitalProject.Models;
 using DigitalProject.Response;
+using DigitalProject.Models;
 
-namespace DigitalProject.Interface
+
+namespace DigitalProject.Interface.User
 {
     public interface IUserRepository
     {
-        Task<User?> GetByIdAsync(Guid id);
-        Task<User?> GetByEmailAsync(string email);
+        Task<Models.User?> GetByEmailAsync(string email);
+        Task CreateAsync(Models.User user);
+        Task<Models.User?> GetByIdAsync(Guid id);  
         Task<bool> IsEmailExistsAsync(string email);
-        Task CreateAsync(User user);
-        Task UpdateAsync(User user);
+        Task UpdateDisplayNameAsync(Guid id, string displayName);
+        Task UpdatePasswordAsync(Guid id, string passwordHash);
     }
 }

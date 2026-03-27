@@ -1,4 +1,5 @@
 ﻿using DigitalProject.Domain;
+using DigitalProject.Exceptions;
 using DigitalProject.Interface.Orders;
 using DigitalProject.Interface.Prouduct;
 using DigitalProject.Models;
@@ -20,7 +21,7 @@ namespace DigitalProject.Services
         {
             var products = (await _productRepository.GetByIdsAsync(request.ProductIds)).ToList();
             if (products.Count == 0)
-                throw new InvalidOperationException("找不到任何商品");
+                throw new AppException("找不到任何有效商品", 404);
             var items = products.Select(p=>new OrderItem
             {
                 Id = Guid.NewGuid(),
