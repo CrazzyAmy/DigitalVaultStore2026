@@ -37,7 +37,8 @@ namespace DigitalProject.Data
                 .HasOne(e => e.Order)
                 .WithMany(o => o.Reviews)
                 .HasForeignKey(e => e.OrderId)
-                .OnDelete(DeleteBehavior.NoAction);
+                .OnDelete(DeleteBehavior.NoAction)
+                .IsRequired(false);  // 模擬用，交易實作後移除
         }
     }
 }
