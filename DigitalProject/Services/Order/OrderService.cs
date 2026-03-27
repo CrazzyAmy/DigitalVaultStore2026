@@ -66,7 +66,7 @@ namespace DigitalProject.Services
                 OrderNo = o.OrderNo,
                 TotalAmount = o.TotalAmount,
                 Status = o.Status,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = o.CreatedAt,
                 Items = o.OrderItems.Select(i => new OrderItemResponse
                 {
                     Id = i.Id,
