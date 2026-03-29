@@ -1,4 +1,5 @@
 ﻿using DigitalProject.Data;
+using DigitalProject.Domain;
 using DigitalProject.Interface.Orders;
 using DigitalProject.Models;
 using Microsoft.EntityFrameworkCore;
@@ -12,6 +13,7 @@ namespace DigitalProject.Repositories
         {
             _db = db;
         }
+
         public async Task<Order> CreateAsync(Order order)
         {
             _db.Orders.Add(order);
@@ -30,10 +32,19 @@ namespace DigitalProject.Repositories
         
             await _db.Orders
              .Include(o => o.OrderItems)
+                .ThenInclude(i => i.Product)
              .Where(o => o.UserId == userId)
              .OrderByDescending(o => o.CreatedAt)
              .ToListAsync();
+        //更新訂單狀態
+        public async Task UpdateStatusAsync(Guid id, OrderStatus status)
+        {
+            var order = await _db.Orders.FindAsync(id);
+            if (order == null) return;
+            order.Status = status;
+            await _db.SaveChangesAsync();
+        }
+   
 
-        
     }
 }

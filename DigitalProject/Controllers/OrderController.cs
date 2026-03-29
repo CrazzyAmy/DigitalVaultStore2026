@@ -1,4 +1,5 @@
 ﻿using DigitalProject.Interface.Orders;
+using DigitalProject.Models;
 using DigitalProject.Request;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -45,10 +46,24 @@ namespace DigitalProject.Controllers
         [Authorize]
         public async Task<IActionResult> GetById(Guid id)
         {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             var order = await _orderService.GetOrderByIdAsync(id);
             if (order == null) return NotFound();
+            if (order.UserId != userId)  //新增：驗證本人
+             return Forbid();
             return Ok(order);
         }
+
+        // PUT api/order/{id}/cancel
+        [HttpPut("{id}/cancel")]
+        public async Task<IActionResult> Cancel(Guid id)
+        {
+            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            await _orderService.CancelOrderAsync(userId, id);
+            return Ok(new { message = "訂單已取消" });
+        }
+
+
 
     }
     }

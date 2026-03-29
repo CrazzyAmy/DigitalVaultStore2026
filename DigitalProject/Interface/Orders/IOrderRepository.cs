@@ -1,4 +1,5 @@
-﻿using DigitalProject.Models;
+﻿using DigitalProject.Domain;
+using DigitalProject.Models;
 
 namespace DigitalProject.Interface.Orders
 {
@@ -7,5 +8,7 @@ namespace DigitalProject.Interface.Orders
         Task<Order> CreateAsync(Order order);
         Task<List<Order>> GetByUserIdAsync(Guid userId);
         Task<Order?> GetByIdAsync(Guid id);
+        Task UpdateStatusAsync(Guid id, OrderStatus status);
+       
     }
 }

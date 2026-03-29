@@ -58,26 +58,42 @@ namespace DigitalProject.Services
             var order = await _orderRepository.GetByIdAsync(id);
             return order == null ? null : MapToResponse(order);
         }
+        //取消訂單
+        public async Task<bool> CancelOrderAsync(Guid userId, Guid orderId)
+        {
+            var order = await _orderRepository.GetByIdAsync(orderId);
+            if (order == null)
+                throw new AppException("訂單不存在", 404);
+
+            if (order.UserId != userId)
+                throw new AppException("無權限取消此訂單", 403);
+
+            if (order.Status != OrderStatus.Pending)
+                throw new AppException("只有待付款的訂單可以取消");
+            await _orderRepository.UpdateStatusAsync(orderId, OrderStatus.Cancelled);
+            return true;
+
+        }
 
         private OrderResponse MapToResponse(Order o)
-            => new()
-            {
-                Id = o.Id,
-                OrderNo = o.OrderNo,
-                TotalAmount = o.TotalAmount,
-                Status = o.Status,
-                CreatedAt = o.CreatedAt,
-                Items = o.OrderItems.Select(i => new OrderItemResponse
-                {
-                    Id = i.Id,
-                    ProductId = i.ProductId,
-                    ProductName = i.ProductName,
-                    UnitPrice = i.UnitPrice,
-                    Quantity = i.Quantity,
-                    SubTotal = i.SubTotal,
-                }).ToList(),
-            };
-       
+     => new()
+     {
+         Id = o.Id,
+         UserId = o.UserId,
+         OrderNo = o.OrderNo,
+         TotalAmount = o.TotalAmount,
+         Status = o.Status,
+         CreatedAt = o.CreatedAt,
+         Items = o.OrderItems.Select(i => new OrderItemResponse
+         {
+             Id = i.Id,
+             ProductId = i.ProductId,
+             ProductName = i.ProductName,
+             UnitPrice = i.UnitPrice,
+             Quantity = i.Quantity,
+             SubTotal = i.SubTotal,
+         }).ToList(),
+     };
 
     }
 }
