@@ -1,6 +1,5 @@
 ﻿// Repositories/ReviewRepository.cs
 using DigitalProject.Data;
-using DigitalProject.Interface;
 using DigitalProject.Interface.Reviews;
 using DigitalProject.Models;
 using Microsoft.EntityFrameworkCore;
@@ -16,44 +15,53 @@ namespace DigitalProject.Repositories.Reviews
             _context = context;
         }
 
-        public async Task<List<Review>> GetByProductIdAsync(Guid productId)
-        {
-            return await _context.Reviews
+        public async Task<List<Review>> GetByProductIdAsync(Guid productId) =>
+            await _context.Reviews
                 .Include(r => r.User)
                 .Include(r => r.Product)
                 .Where(r => r.ProductId == productId)
                 .OrderByDescending(r => r.CreatedAt)
                 .AsNoTracking()
                 .ToListAsync();
-        }
 
-        public async Task<List<Review>> GetByUserIdAsync(Guid userId)
-        {
-            return await _context.Reviews
+        public async Task<List<Review>> GetByUserIdAsync(Guid userId) =>
+            await _context.Reviews
                 .Include(r => r.User)
                 .Include(r => r.Product)
                 .Where(r => r.UserId == userId)
                 .OrderByDescending(r => r.CreatedAt)
                 .AsNoTracking()
                 .ToListAsync();
-        }
 
-        public async Task<Review?> GetByIdAsync(Guid id)
-        {
-            return await _context.Reviews
+        public async Task<Review?> GetByIdAsync(Guid id) =>
+            await _context.Reviews
                 .Include(r => r.User)
                 .Include(r => r.Product)
                 .FirstOrDefaultAsync(r => r.Id == id);
-        }
+
+        // 確認是否已評論過（用 userId + productId）
+        public async Task<bool> HasReviewedAsync(Guid userId, Guid productId) =>
+            await _context.Reviews
+                .AnyAsync(r =>
+                    r.UserId == userId &&
+                    r.ProductId == productId);
+
+        // 確認是否已購買
+        public async Task<bool> HasPurchasedAsync(Guid userId, Guid productId) =>
+            await _context.OrderItems
+                .AnyAsync(oi =>
+                    oi.ProductId == productId &&
+                    oi.Order.UserId == userId &&
+                    (oi.Order.Status == Domain.OrderStatus.Paid ||
+                     oi.Order.Status == Domain.OrderStatus.Completed));
 
         // 防止同一筆訂單對同一商品重複評論
-        public async Task<bool> ExistsAsync(Guid userId, Guid productId, Guid orderId)
-        {
-            return await _context.Reviews
-                .AnyAsync(r => r.UserId == userId
-                            && r.ProductId == productId
-                            && r.OrderId == orderId);
-        }
+        public async Task<bool> ExistsAsync(Guid userId, Guid productId, Guid orderId) =>
+            await _context.Reviews
+                .AnyAsync(r =>
+                    r.UserId == userId &&
+                    r.ProductId == productId &&
+                    r.OrderId == orderId);
 
         public async Task<bool> CreateAsync(Review review)
         {
@@ -71,7 +79,6 @@ namespace DigitalProject.Repositories.Reviews
         {
             var review = await _context.Reviews.FindAsync(id);
             if (review == null) return false;
-
             _context.Reviews.Remove(review);
             return await _context.SaveChangesAsync() > 0;
         }

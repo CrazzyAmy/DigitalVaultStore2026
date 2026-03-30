@@ -78,6 +78,7 @@ namespace DigitalProject.Security
             // 將 JWT Token 物件轉換成字串並包裝成 AuthResponse 回傳
             return new AuthResponse
             {
+                Id = user.Id,
                 Token = new JwtSecurityTokenHandler().WriteToken(token),
                 Email = user.Email,
                 DisplayName = user.DisplayName,

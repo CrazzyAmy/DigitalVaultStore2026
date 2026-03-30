@@ -10,7 +10,7 @@ namespace DigitalProject.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class OrderController : ControllerBase
+    public class OrderController : BaseController
     {
         private readonly IOrderService _orderService;
         public OrderController(IOrderService orderService)
@@ -24,7 +24,7 @@ namespace DigitalProject.Controllers
         public async Task<IActionResult> Create([FromBody] CreateOrderRequest request)
         {
             // Auth 完成後換成從 JWT 取得
-            var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var userId = GetUserId()!.Value;
             //var userId = Guid.Parse("1ED3C1A5-5D92-4D42-B29B-60957E3400A2");
 
             var order = await _orderService.CreateOrderAsync(userId, request);

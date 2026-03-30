@@ -9,8 +9,10 @@ namespace DigitalProject.Interface.Reviews
         Task<List<ReviewResponse>> GetByProductIdAsync(Guid productId);
         Task<List<ReviewResponse>> GetByUserIdAsync(Guid userId);
         Task<ReviewResponse?> GetByIdAsync(Guid id);
-        Task<(bool Success, string Message)> CreateAsync(Guid userId, CreateReviewRequest request);
-        Task<(bool Success, string Message)> UpdateAsync(Guid userId, Guid reviewId, UpdateReviewRequest request);
-        Task<(bool Success, string Message)> DeleteAsync(Guid userId, Guid reviewId);
+        Task<ReviewStatsResponse> GetStatsAsync(Guid productId);              // ← 新增
+        Task<ReviewResponse> CreateAsync(Guid userId, CreateReviewRequest request);    // ← 拿掉 tuple
+        Task UpdateAsync(Guid userId, Guid reviewId, UpdateReviewRequest request);     // ← 拿掉 tuple
+        Task DeleteAsync(Guid userId, Guid reviewId);                                  // ← 拿掉 tuple
+        Task AdminDeleteAsync(Guid reviewId);
     }
 }

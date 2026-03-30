@@ -1,17 +1,16 @@
 ﻿// Controllers/ReviewController.cs
-using DigitalProject.Interface;
+using DigitalProject.Exceptions;
 using DigitalProject.Interface.Reviews;
 using DigitalProject.Request;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 
 namespace DigitalProject.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class ReviewController : ControllerBase
+    [Authorize]
+    public class ReviewController : BaseController
     {
         private readonly IReviewService _reviewService;
 
@@ -20,88 +19,78 @@ namespace DigitalProject.Controllers
             _reviewService = reviewService;
         }
 
-        // 取得商品的所有評論（公開）
+        // GET /api/review/product/{productId}
         [HttpGet("product/{productId}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetByProduct(Guid productId)
         {
             var reviews = await _reviewService.GetByProductIdAsync(productId);
             return Ok(reviews);
         }
 
-        // 取得使用者自己的評論（需登入）
+        // GET /api/review/product/{productId}/stats
+        [HttpGet("product/{productId}/stats")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetStats(Guid productId)
+        {
+            var stats = await _reviewService.GetStatsAsync(productId);
+            return Ok(stats);
+        }
+
+        // GET /api/review/my
         [HttpGet("my")]
-        [Authorize]
         public async Task<IActionResult> GetMyReviews()
         {
-            var userId = GetUserId();
-            if (userId == null) return Unauthorized();
-
-            var reviews = await _reviewService.GetByUserIdAsync(userId.Value);
+            var userId = GetUserId()!.Value;
+            var reviews = await _reviewService.GetByUserIdAsync(userId);
             return Ok(reviews);
         }
 
-        // 取得單筆評論
+        // GET /api/review/{id}
         [HttpGet("{id}")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetById(Guid id)
         {
             var review = await _reviewService.GetByIdAsync(id);
-            if (review == null) return NotFound(new { message = "評論不存在" });
+            if (review == null)
+                throw new AppException("評論不存在", 404);
             return Ok(review);
         }
 
-        // 新增評論（需登入）
+        // POST /api/review
         [HttpPost]
-        [Authorize]
         public async Task<IActionResult> Create([FromBody] CreateReviewRequest request)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            var userId = GetUserId();
-            if (userId == null) return Unauthorized();
-
-            var (success, message) = await _reviewService.CreateAsync(userId.Value, request);
-            if (!success) return BadRequest(new { message });
-
-            return Ok(new { message });
+            var userId = GetUserId()!.Value;
+            var review = await _reviewService.CreateAsync(userId, request);
+            return Ok(review);
         }
 
-        // 修改評論（需登入，只能改自己的）
+        // PUT /api/review/{id}
         [HttpPut("{id}")]
-        [Authorize]
         public async Task<IActionResult> Update(Guid id, [FromBody] UpdateReviewRequest request)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            var userId = GetUserId();
-            if (userId == null) return Unauthorized();
-
-            var (success, message) = await _reviewService.UpdateAsync(userId.Value, id, request);
-            if (!success) return BadRequest(new { message });
-
-            return Ok(new { message });
+            var userId = GetUserId()!.Value;
+            await _reviewService.UpdateAsync(userId, id, request);
+            return Ok(new { message = "評論已更新" });
         }
 
-        // 刪除評論（需登入，只能刪自己的）
+        // DELETE /api/review/{id}
         [HttpDelete("{id}")]
-        [Authorize]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var userId = GetUserId();
-            if (userId == null) return Unauthorized();
-
-            var (success, message) = await _reviewService.DeleteAsync(userId.Value, id);
-            if (!success) return BadRequest(new { message });
-
-            return Ok(new { message });
+            var userId = GetUserId()!.Value;
+            await _reviewService.DeleteAsync(userId, id);
+            return Ok(new { message = "評論已刪除" });
         }
 
-        // 從 JWT Token 取出 UserId
-        private Guid? GetUserId()
+        // DELETE /api/review/{id}/admin
+        [HttpDelete("{id}/admin")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AdminDelete(Guid id)
         {
-            var userIdStr = User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value
-                         ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-            return Guid.TryParse(userIdStr, out var userId) ? userId : null;
+            await _reviewService.AdminDeleteAsync(id);
+            return Ok(new { message = "評論已刪除" });
         }
     }
 }

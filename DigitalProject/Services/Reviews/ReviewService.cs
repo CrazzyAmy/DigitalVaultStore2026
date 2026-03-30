@@ -1,4 +1,5 @@
 ﻿// Services/ReviewService.cs
+using DigitalProject.Exceptions;
 using DigitalProject.Interface;
 using DigitalProject.Interface.Reviews;
 using DigitalProject.Models;
@@ -34,17 +35,37 @@ namespace DigitalProject.Services.Reviews
             return review == null ? null : MapToResponse(review);
         }
 
-        public async Task<(bool Success, string Message)> CreateAsync(Guid userId, CreateReviewRequest request)
+        public async Task<ReviewStatsResponse> GetStatsAsync(Guid productId)
         {
-            // 驗證評分範圍
-            if (request.Rating < 1 || request.Rating > 5)
-                return (false, "評分必須介於 1 到 5 之間");
+            var reviews = await _reviewRepository.GetByProductIdAsync(productId);
 
-            // 防止重複評論
-            var exists = await _reviewRepository.ExistsAsync(userId, request.ProductId, request.OrderId);
+            return new ReviewStatsResponse
+            {
+                TotalCount = reviews.Count,
+                AverageRating = reviews.Count > 0
+                    ? Math.Round(reviews.Average(r => r.Rating), 1)
+                    : 0,
+                RatingDistribution = Enumerable.Range(1, 5)
+                    .ToDictionary(
+                        star => star,
+                        star => reviews.Count(r => r.Rating == star))
+            };
+        }
+
+        public async Task<ReviewResponse> CreateAsync(Guid userId, CreateReviewRequest request)
+        {
+            // 1. 確認已購買（IsRequired(false) 期間暫時跳過）
+            // var hasPurchased = await _reviewRepository.HasPurchasedAsync(userId, request.ProductId);
+            // if (!hasPurchased)
+            //     throw new AppException("必須購買商品後才能評論", 403);
+
+            // 2. 防止重複評論
+            var exists = await _reviewRepository.ExistsAsync(
+                userId, request.ProductId, request.OrderId);
             if (exists)
-                return (false, "此訂單已對該商品評論過");
+                throw new AppException("此訂單已對該商品評論過");
 
+            // 3. 建立評論
             var review = new Review
             {
                 Id = Guid.NewGuid(),
@@ -56,43 +77,50 @@ namespace DigitalProject.Services.Reviews
                 CreatedAt = DateTime.UtcNow
             };
 
-            var created = await _reviewRepository.CreateAsync(review);
-            return created ? (true, "評論新增成功") : (false, "評論新增失敗，請稍後再試");
+            await _reviewRepository.CreateAsync(review);
+
+            // 重新查詢取得完整資料（含 User、Product）
+            var created = await _reviewRepository.GetByIdAsync(review.Id);
+            return MapToResponse(created!);
         }
 
-        public async Task<(bool Success, string Message)> UpdateAsync(Guid userId, Guid reviewId, UpdateReviewRequest request)
+        public async Task UpdateAsync(Guid userId, Guid reviewId, UpdateReviewRequest request)
         {
-            // 驗證評分範圍
-            if (request.Rating < 1 || request.Rating > 5)
-                return (false, "評分必須介於 1 到 5 之間");
-
             var review = await _reviewRepository.GetByIdAsync(reviewId);
-            if (review == null)
-                return (false, "評論不存在");
 
-            // 只有本人可以修改
+            if (review == null)
+                throw new AppException("評論不存在", 404);
+
             if (review.UserId != userId)
-                return (false, "無權限修改此評論");
+                throw new AppException("無權限修改此評論", 403);
 
             review.Rating = request.Rating;
             review.Comment = request.Comment;
 
-            var updated = await _reviewRepository.UpdateAsync(review);
-            return updated ? (true, "評論更新成功") : (false, "評論更新失敗，請稍後再試");
+            await _reviewRepository.UpdateAsync(review);
         }
 
-        public async Task<(bool Success, string Message)> DeleteAsync(Guid userId, Guid reviewId)
+        public async Task DeleteAsync(Guid userId, Guid reviewId)
         {
             var review = await _reviewRepository.GetByIdAsync(reviewId);
+
             if (review == null)
-                return (false, "評論不存在");
+                throw new AppException("評論不存在", 404);
 
-            // 只有本人可以刪除
             if (review.UserId != userId)
-                return (false, "無權限刪除此評論");
+                throw new AppException("無權限刪除此評論", 403);
 
-            var deleted = await _reviewRepository.DeleteAsync(reviewId);
-            return deleted ? (true, "評論刪除成功") : (false, "評論刪除失敗，請稍後再試");
+            await _reviewRepository.DeleteAsync(reviewId);
+        }
+
+        public async Task AdminDeleteAsync(Guid reviewId)
+        {
+            var review = await _reviewRepository.GetByIdAsync(reviewId);
+
+            if (review == null)
+                throw new AppException("評論不存在", 404);
+
+            await _reviewRepository.DeleteAsync(reviewId);
         }
 
         private static ReviewResponse MapToResponse(Review review) => new()
