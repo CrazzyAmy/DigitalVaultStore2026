@@ -39,6 +39,32 @@ namespace DigitalProject.Data
                 .HasForeignKey(e => e.OrderId)
                 .OnDelete(DeleteBehavior.NoAction)
                 .IsRequired(false);  // 模擬用，交易實作後移除
-        }
+
+            modelBuilder.Entity<Payment>(entity =>
+            {
+                entity.Property(e => e.PaymentCode)
+                      .HasMaxLength(20);
+
+                entity.Property(e => e.Amount)
+                      .HasColumnType("decimal(10,2)");
+
+                entity.Property(e => e.Provider)
+                      .HasConversion<string>();
+
+                entity.Property(e => e.Status)
+                      .HasConversion<string>();
+
+                entity.HasOne(e => e.Order)
+                      .WithMany(o => o.Payments)
+                      .HasForeignKey(e => e.OrderId)
+                      .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(e => e.VoidByUser)
+                      .WithMany(u => u.VoidedPayments)
+                      .HasForeignKey(e => e.VoidByUserId)
+                      .IsRequired(false)
+                      .OnDelete(DeleteBehavior.NoAction);
+            });
+    }
     }
 }

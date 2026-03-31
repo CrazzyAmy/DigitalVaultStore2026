@@ -15,6 +15,8 @@ namespace DigitalProject.Models
         public bool IsVoid { get; set; } = false;
         public string? VoidReason { get; set; }
         public DateTime? VoidAt { get; set; }
+        public string? PaymentCode { get; set; }
+        public DateTime? ExpiresAt { get; set; }
 
         public Order Order { get; set; } = null!;
         public User? VoidByUser { get; set; }
