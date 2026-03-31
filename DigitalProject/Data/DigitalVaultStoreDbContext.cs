@@ -48,11 +48,11 @@ namespace DigitalProject.Data
                 entity.Property(e => e.Amount)
                       .HasColumnType("decimal(10,2)");
 
-                entity.Property(e => e.Provider)
-                      .HasConversion<string>();
+                //entity.Property(e => e.Provider)
+                //      .HasConversion<string>();
 
-                entity.Property(e => e.Status)
-                      .HasConversion<string>();
+                //entity.Property(e => e.Status)
+                //      .HasConversion<string>();
 
                 entity.HasOne(e => e.Order)
                       .WithMany(o => o.Payments)

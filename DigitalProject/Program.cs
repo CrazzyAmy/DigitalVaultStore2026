@@ -3,15 +3,18 @@ using DigitalProject.Interface;
 using DigitalProject.Interface.Auth;
 using DigitalProject.Interface.Category;
 using DigitalProject.Interface.Orders;
+using DigitalProject.Interface.Payment;
 using DigitalProject.Interface.Prouduct;
 using DigitalProject.Interface.Reviews;
 using DigitalProject.Interface.User;
 using DigitalProject.Middleware;
 using DigitalProject.Repositories;
+using DigitalProject.Repositories.Payment;
 using DigitalProject.Repositories.Prouduct;
 using DigitalProject.Repositories.Reviews;
 using DigitalProject.Security;
 using DigitalProject.Services;
+using DigitalProject.Services.Payment;
 using DigitalProject.Services.Prouduct;
 using DigitalProject.Services.Reviews;
 using DigitalProject.Services.User;
@@ -34,6 +37,8 @@ builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
+builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+
 
 // ── Services ──────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IProductService, ProductService>();
@@ -42,6 +47,7 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IPaymentServie, PaymentService>();
 
 // ── Security ──────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IJwtHelper, JwtHelper>();

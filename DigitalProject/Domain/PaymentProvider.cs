@@ -2,7 +2,9 @@
 {
     public enum PaymentProvider
     {
-        ECPay,
-        LinePay
+        ECPay = 0,
+        LinePay =1,
+        CreditCard = 2,
+        CVS = 3
     }
 }

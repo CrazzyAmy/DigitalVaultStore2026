@@ -54,10 +54,10 @@ namespace DigitalProject.Services.Reviews
 
         public async Task<ReviewResponse> CreateAsync(Guid userId, CreateReviewRequest request)
         {
-            // 1. 確認已購買（IsRequired(false) 期間暫時跳過）
-            // var hasPurchased = await _reviewRepository.HasPurchasedAsync(userId, request.ProductId);
-            // if (!hasPurchased)
-            //     throw new AppException("必須購買商品後才能評論", 403);
+            //1.確認已購買（IsRequired(false) 期間暫時跳過）
+             var hasPurchased = await _reviewRepository.HasPurchasedAsync(userId, request.ProductId);
+            if (!hasPurchased)
+                throw new AppException("必須購買商品後才能評論", 403);
 
             // 2. 防止重複評論
             var exists = await _reviewRepository.ExistsAsync(
