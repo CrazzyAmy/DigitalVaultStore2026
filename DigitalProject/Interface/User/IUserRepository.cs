@@ -14,5 +14,7 @@ namespace DigitalProject.Interface.User
         Task<bool> IsEmailExistsAsync(string email);
         Task UpdateDisplayNameAsync(Guid id, string displayName);
         Task UpdatePasswordAsync(Guid id, string passwordHash);
+        Task UpdateRefreshTokenAsync(Models.User user);
+        Task<Models.User?> GetByRefreshTokenAsync(string refreshToken);
     }
 }

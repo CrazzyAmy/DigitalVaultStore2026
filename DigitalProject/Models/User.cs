@@ -16,6 +16,9 @@ namespace DigitalProject.Models
         public string? ProviderKey { get; set; }
         public string? PasswordHash { get; set; }
 
+        // Refresh Token
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiry { get; set; }
 
         public ICollection<Order> Orders { get; set; } = new List<Order>();
         public ICollection<Review> Reviews { get; set; } = new List<Review>();

@@ -7,6 +7,6 @@ namespace DigitalProject.Interface.Auth
     {
         Task<RegisterResponse> RegisterAsync(RegisterRequest request);
         Task<AuthResponse> LoginAsync(LoginRequest request);
-
+        Task<AuthResponse> RefreshAsync(RefreshTokenRequest request);
     }
 }

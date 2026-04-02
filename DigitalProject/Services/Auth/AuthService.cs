@@ -2,11 +2,13 @@
 using DigitalProject.Exceptions;
 using DigitalProject.Interface;
 using DigitalProject.Interface.Auth;
+using DigitalProject.Interface.Blacklist;
 using DigitalProject.Interface.User;
 using DigitalProject.Models;
 using DigitalProject.Request;
 using DigitalProject.Response;
 using DigitalProject.Security;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -16,14 +18,16 @@ namespace DigitalProject.Services
 {
     public class AuthService : IAuthService
     {
+        private readonly ITokenBlacklistService _blacklistService;
         private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IJwtHelper _jwtHelper;
-        public AuthService(IUserRepository userRepository, IPasswordHasher passwordHasher, IJwtHelper jwtHelper)
+        public AuthService(IUserRepository userRepository, IPasswordHasher passwordHasher, IJwtHelper jwtHelper, ITokenBlacklistService blacklistService)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _jwtHelper = jwtHelper;
+            _blacklistService = blacklistService;
         } 
         public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
         {
@@ -63,11 +67,45 @@ namespace DigitalProject.Services
             if (!user.IsActive)
                 throw new AppException("此帳號已被停用", 401);
             // 4. 回傳 JWT
-            return _jwtHelper.GenerateToken(user); 
+            var authResponse = _jwtHelper.GenerateToken(user);
+
+            // 將 Refresh Token 和過期時間寫回使用者紀錄
+            user.RefreshToken = authResponse.RefreshToken;
+            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(180);
+            await _userRepository.UpdateRefreshTokenAsync(user);
+
+            return authResponse;
 
 
         }
 
-       
+        public async Task<AuthResponse> RefreshAsync(RefreshTokenRequest request)
+        {
+            // Step 1：用 RefreshToken 找 User
+            var user = await _userRepository.GetByRefreshTokenAsync(request.RefreshToken); // ← 改這行
+            if (user == null)
+                throw new UnauthorizedAccessException("refresh_token_revoked");
+
+            // Step 2：檢查是否過期
+            if (user.RefreshTokenExpiry < DateTime.UtcNow)
+                throw new UnauthorizedAccessException("refresh_token_expired");
+
+            // Step 3：把舊的 Login Token 加入 blacklist
+            // Login Token 有效期是 2 天，所以 expiry 給 UtcNow + 2 天
+            _blacklistService.Blacklist(
+                request.OldLoginToken,
+                DateTime.UtcNow.AddDays(2)
+            );
+
+            // Step 4：產生新的 token pair
+            var authResponse = _jwtHelper.GenerateToken(user);
+
+            // Step 5：把新 RefreshToken 存回 DB
+            user.RefreshToken = authResponse.RefreshToken;
+            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(180);
+            await _userRepository.UpdateRefreshTokenAsync(user);
+
+            return authResponse;
+        }
     }
 }

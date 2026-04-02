@@ -45,6 +45,18 @@ namespace DigitalProject.Repositories
             user.PasswordHash = passwordHash;
             await _dbcontext.SaveChangesAsync();
         }
+
+        public async Task UpdateRefreshTokenAsync(User user)
+        {
+            _dbcontext.Users.Update(user);
+            await _dbcontext.SaveChangesAsync();
+        }
+
+        public async Task<User?> GetByRefreshTokenAsync(string refreshToken)
+        {
+            return await _dbcontext.Users
+                .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+        }
     }
 
 }

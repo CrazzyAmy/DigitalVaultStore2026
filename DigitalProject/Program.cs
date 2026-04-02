@@ -1,6 +1,7 @@
 ﻿using DigitalProject.Data;
 using DigitalProject.Interface;
 using DigitalProject.Interface.Auth;
+using DigitalProject.Interface.Blacklist;
 using DigitalProject.Interface.Category;
 using DigitalProject.Interface.Orders;
 using DigitalProject.Interface.Payment;
@@ -14,6 +15,7 @@ using DigitalProject.Repositories.Prouduct;
 using DigitalProject.Repositories.Reviews;
 using DigitalProject.Security;
 using DigitalProject.Services;
+using DigitalProject.Services.Blacklist;
 using DigitalProject.Services.Payment;
 using DigitalProject.Services.Prouduct;
 using DigitalProject.Services.Reviews;
@@ -32,6 +34,8 @@ builder.Services.AddDbContext<DigitalVaultStoreDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DbContext")));
 
 // ── Repositories ──────────────────────────────────────────────────────────────
+// Program.cs
+builder.Services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IOrderRepository, OrderRepository>();
@@ -62,6 +66,8 @@ builder.Services.AddCors(options =>
 
 // ── JWT ───────────────────────────────────────────────────────────────────────
 var jwtSettings = builder.Configuration.GetSection("JwtTokenSettings");
+
+
 
 builder.Services.AddAuthentication(options =>
 {
@@ -138,7 +144,7 @@ builder.Services.AddSwaggerGen(c =>
 
 // ── Build ─────────────────────────────────────────────────────────────────────
 var app = builder.Build(); // ← 移到這裡
-
+app.UseMiddleware<TokenBlacklistMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())

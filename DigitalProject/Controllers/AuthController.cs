@@ -31,5 +31,24 @@ namespace DigitalProject.Controllers
             var result = await _authService.LoginAsync(request);
             return Ok(result);
         }
+
+        // POST /api/auth/refresh
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.RefreshToken))
+                return BadRequest(new { error = "invalid_token" });
+
+            try
+            {
+                var result = await _authService.RefreshAsync(request);
+                return Ok(result);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                // ex.Message 就是 "refresh_token_expired" 或 "refresh_token_revoked"
+                return Unauthorized(new { error = ex.Message });
+            }
+        }
     }
 }

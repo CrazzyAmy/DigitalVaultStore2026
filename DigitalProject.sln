@@ -5,6 +5,11 @@ VisualStudioVersion = 17.14.37012.4
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DigitalProject", "DigitalProject\DigitalProject.csproj", "{4972A3B2-F785-4F9B-9B27-CFA5B35645E8}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "方案項目", "方案項目", "{F08AC419-42AE-4386-BB8C-1BC72C929F55}"
+	ProjectSection(SolutionItems) = preProject
+		RefreshToken.md = RefreshToken.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
