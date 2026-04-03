@@ -9,5 +9,6 @@ namespace DigitalProject.Interface.Orders
         Task<List<OrderResponse>> GetUserOrdersAsync(Guid userId);
         Task<OrderResponse?> GetOrderByIdAsync(Guid id);
         Task<bool> CancelOrderAsync(Guid userId, Guid orderId);
+        Task<DownloadResponse> GetDownloadAsync(Guid userId, Guid orderId);  
     }
 }

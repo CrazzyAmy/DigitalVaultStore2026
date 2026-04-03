@@ -11,7 +11,7 @@ namespace DigitalProject.Services
     {
         private readonly IOrderRepository _orderRepository;
         private readonly IProductRepository _productRepository;
-        public OrderService(IOrderRepository orderRepository,IProductRepository productRepository)
+        public OrderService(IOrderRepository orderRepository, IProductRepository productRepository)
         {
             _orderRepository = orderRepository;
             _productRepository = productRepository;
@@ -22,7 +22,7 @@ namespace DigitalProject.Services
             var products = (await _productRepository.GetByIdsAsync(request.ProductIds)).ToList();
             if (products.Count == 0)
                 throw new AppException("找不到任何有效商品", 404);
-            var items = products.Select(p=>new OrderItem
+            var items = products.Select(p => new OrderItem
             {
                 Id = Guid.NewGuid(),
                 ProductId = p.Id,
@@ -44,14 +44,19 @@ namespace DigitalProject.Services
             };
             await _orderRepository.CreateAsync(order);
             return MapToResponse(order);
-           
+
         }
         public async Task<List<OrderResponse>> GetUserOrdersAsync(Guid userId)
         {
             var orders = await _orderRepository.GetByUserIdAsync(userId);
-            return orders.Select(MapToResponse).ToList();
+            return orders
+                 .Where(o => o.Status != OrderStatus.Cancelled) // 過濾已取消
+                 .Select(MapToResponse)
+                  .ToList();
 
         }
+
+
 
         public async Task<OrderResponse?> GetOrderByIdAsync(Guid id)
         {
@@ -75,6 +80,44 @@ namespace DigitalProject.Services
 
         }
 
+        public async Task<DownloadResponse> GetDownloadAsync(Guid userId, Guid orderId)
+        {
+            var order = await _orderRepository.GetByIdAsync(orderId);
+
+            if (order == null)
+                throw new AppException("訂單不存在", 404);
+            if (order.UserId != userId)
+                throw new AppException("無權限", 403);
+            if (order.Status == OrderStatus.Pending)
+                throw new AppException("請先完成付款", 400);
+            if (order.Status == OrderStatus.Cancelled)
+                throw new AppException("此訂單已取消", 400);
+
+            // 產生虛擬下載連結（24 小時有效）
+            var downloads = order.OrderItems.Select(item => new DownloadItemResponse
+            {
+                ProductId = item.ProductId,
+                ProductName = item.ProductName,
+                DownloadUrl = string.IsNullOrEmpty(item.Product?.DownloadUrl) || item.Product.DownloadUrl == "#"
+              ? $"https://digitalvault.com/downloads/{item.ProductId}"
+              : item.Product.DownloadUrl,
+                ExpiresAt = DateTime.UtcNow.AddHours(24)
+            }).ToList();
+
+            // 付款後第一次下載 → 更新為已完成
+            if (order.Status == OrderStatus.Paid)
+                await _orderRepository.UpdateStatusAsync(orderId, OrderStatus.Completed);
+
+            return new DownloadResponse
+            {
+                OrderNo = order.OrderNo,
+                Downloads = downloads
+            };
+        }
+
+
+
+
         private OrderResponse MapToResponse(Order o)
      => new()
      {
@@ -94,6 +137,7 @@ namespace DigitalProject.Services
              SubTotal = i.SubTotal,
          }).ToList(),
      };
+
 
     }
 }

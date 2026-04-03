@@ -63,6 +63,17 @@ namespace DigitalProject.Controllers
             return Ok(new { message = "訂單已取消" });
         }
 
+        // GET /api/order/{orderId}/download
+        [HttpGet("{orderId}/download")]
+        public async Task<IActionResult> GetDownload(Guid orderId)
+        {
+            var userId = GetUserId()!.Value;
+            var result = await _orderService.GetDownloadAsync(userId, orderId);
+            return Ok(result);
+        }
+
+
+
 
 
     }

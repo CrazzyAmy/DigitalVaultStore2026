@@ -25,6 +25,7 @@ namespace DigitalProject.Repositories
         
             await _db.Orders
                 .Include(o => o.OrderItems)
+                .ThenInclude(i => i.Product)  // ← 新增，下載功能需要
                 .FirstOrDefaultAsync(o => o.Id == id);
         
 
