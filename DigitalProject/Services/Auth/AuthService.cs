@@ -107,5 +107,49 @@ namespace DigitalProject.Services
 
             return authResponse;
         }
+
+        // Services/AuthService.cs
+        public async Task<AuthResponse> GoogleLoginAsync(
+            string email,
+            string displayName,
+            string providerKey,
+            string? avatarUrl)
+        {
+            // 1. 檢查 Email 是否已存在
+            var user = await _userRepository.GetByEmailAsync(email);
+
+            if (user == null)
+            {
+                // 2. 不存在 → 自動註冊
+                user = new Models.User
+                {
+                    Id = Guid.NewGuid(),
+                    Email = email,
+                    DisplayName = displayName,
+                    AvatarUrl = avatarUrl,
+                    Provider = AuthProvider.Google,
+                    ProviderKey = providerKey,
+                    PasswordHash = null,
+                    Role = UserRole.User,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                };
+                await _userRepository.CreateAsync(user);
+            }
+            else
+            {
+                // 3. 已存在 → 更新 Google 資訊
+                user.ProviderKey = providerKey;
+                user.AvatarUrl = avatarUrl;
+                await _userRepository.UpdateAsync(user);
+            }
+
+            // 4. 確認帳號啟用
+            if (!user.IsActive)
+                throw new AppException("此帳號已被停用", 401);
+
+            // 5. 回傳 JWT
+            return _jwtHelper.GenerateToken(user);
+        }
     }
 }

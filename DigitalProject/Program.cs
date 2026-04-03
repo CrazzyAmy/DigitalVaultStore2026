@@ -26,6 +26,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authentication.Google;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -65,6 +66,7 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod()));
 
 // ── JWT ───────────────────────────────────────────────────────────────────────
+
 var jwtSettings = builder.Configuration.GetSection("JwtTokenSettings");
 
 
@@ -74,6 +76,7 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
 })
+  
     .AddJwtBearer(options =>
     {
         options.RequireHttpsMetadata = false;
@@ -106,7 +109,15 @@ builder.Services.AddAuthentication(options =>
                 return context.Response.WriteAsync(JsonSerializer.Serialize(body));
             }
         };
-    });
+    })
+  .AddGoogle(options =>
+   {
+       options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
+       options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
+       options.CallbackPath = "/signin-google";
+   });
+
+
 
 builder.Services.AddAuthorization();
 

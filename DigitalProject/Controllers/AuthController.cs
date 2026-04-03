@@ -1,7 +1,12 @@
 ﻿// Controllers/AuthController.cs
-using DigitalProject.Request;
+using DigitalProject.Exceptions;
 using DigitalProject.Interface.Auth;
+using DigitalProject.Request;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace DigitalProject.Controllers
 {
@@ -49,6 +54,53 @@ namespace DigitalProject.Controllers
                 // ex.Message 就是 "refresh_token_expired" 或 "refresh_token_revoked"
                 return Unauthorized(new { error = ex.Message });
             }
+        }
+
+        // GET /api/auth/google
+        // 導向 Google 授權頁面
+        [HttpGet("google")]
+        [AllowAnonymous]
+        public IActionResult GoogleLogin([FromQuery] string? returnUrl = "/")
+        {
+            var properties = new AuthenticationProperties
+            {
+                RedirectUri = Url.Action("GoogleCallback", "Auth",
+                    new { returnUrl }, Request.Scheme)
+            };
+            return Challenge(properties, GoogleDefaults.AuthenticationScheme);
+        }
+
+        // GET /api/auth/google/callback
+        // Google 授權後回呼
+        [HttpGet("google/callback")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GoogleCallback(string? returnUrl = "/")
+        {
+            // 1. 取得 Google 回傳的使用者資訊
+            var result = await HttpContext.AuthenticateAsync(
+                GoogleDefaults.AuthenticationScheme);
+
+            if (!result.Succeeded)
+                throw new AppException("Google 登入失敗", 401);
+
+            var claims = result.Principal!.Claims;
+            var email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+            var name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+            var providerKey = claims.FirstOrDefault(c =>
+                c.Type == ClaimTypes.NameIdentifier)?.Value;
+            var avatarUrl = claims.FirstOrDefault(c =>
+                c.Type == "urn:google:picture")?.Value;
+
+            if (email == null || providerKey == null)
+                throw new AppException("無法取得 Google 使用者資訊", 401);
+
+            // 2. 登入或自動註冊
+            var authResult = await _authService.GoogleLoginAsync(
+                email, name ?? email, providerKey, avatarUrl);
+
+            // 3. 導向前端並帶上 Token
+            var frontendUrl = $"http://localhost:5173/auth/callback?token={authResult.Token}";
+            return Redirect(frontendUrl);
         }
     }
 }

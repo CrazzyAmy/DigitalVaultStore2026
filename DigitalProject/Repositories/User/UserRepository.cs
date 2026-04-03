@@ -1,4 +1,5 @@
 ﻿using DigitalProject.Data;
+using DigitalProject.Domain;
 using DigitalProject.Interface.User;
 using DigitalProject.Models;
 using Microsoft.EntityFrameworkCore;
@@ -56,6 +57,18 @@ namespace DigitalProject.Repositories
         {
             return await _dbcontext.Users
                 .FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
+        }
+
+        // 用 Google ProviderKey 查找使用者
+        public async Task<Models.User?> GetByProviderKeyAsync(string providerKey) =>
+            await _dbcontext.Users
+                .FirstOrDefaultAsync(u =>
+                    u.Provider == AuthProvider.Google &&
+                    u.ProviderKey == providerKey);
+        public async Task UpdateAsync(User user)
+        {
+            _dbcontext.Users.Update(user);
+            await _dbcontext.SaveChangesAsync();
         }
     }
 

@@ -10,11 +10,13 @@ namespace DigitalProject.Interface.User
     {
         Task<Models.User?> GetByEmailAsync(string email);
         Task CreateAsync(Models.User user);
-        Task<Models.User?> GetByIdAsync(Guid id);  
+        Task<Models.User?> GetByIdAsync(Guid id);
+        Task<Models.User?> GetByProviderKeyAsync(string providerKey);
         Task<bool> IsEmailExistsAsync(string email);
         Task UpdateDisplayNameAsync(Guid id, string displayName);
         Task UpdatePasswordAsync(Guid id, string passwordHash);
         Task UpdateRefreshTokenAsync(Models.User user);
         Task<Models.User?> GetByRefreshTokenAsync(string refreshToken);
+        Task UpdateAsync(Models.User user);
     }
 }
