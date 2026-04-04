@@ -1,6 +1,7 @@
 ﻿// Controllers/AuthController.cs
 using DigitalProject.Exceptions;
 using DigitalProject.Interface.Auth;
+using DigitalProject.Interface.Blacklist;
 using DigitalProject.Request;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
@@ -12,17 +13,20 @@ namespace DigitalProject.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthController : ControllerBase
+    public class AuthController : BaseController
     {
         private readonly IAuthService _authService;
+        private readonly ITokenBlacklistService _blacklistService;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, ITokenBlacklistService blacklistService)
         {
             _authService = authService;
+            _blacklistService = blacklistService;
         }
 
         // POST /api/auth/register
         [HttpPost("register")]
+        [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             var result = await _authService.RegisterAsync(request);
@@ -31,6 +35,7 @@ namespace DigitalProject.Controllers
 
         // POST /api/auth/login
         [HttpPost("login")]
+        [AllowAnonymous]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var result = await _authService.LoginAsync(request);
@@ -39,6 +44,7 @@ namespace DigitalProject.Controllers
 
         // POST /api/auth/refresh
         [HttpPost("refresh")]
+        [AllowAnonymous]
         public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.RefreshToken))
@@ -54,6 +60,18 @@ namespace DigitalProject.Controllers
                 // ex.Message 就是 "refresh_token_expired" 或 "refresh_token_revoked"
                 return Unauthorized(new { error = ex.Message });
             }
+        }
+
+        // POST /api/auth/logout
+        [HttpPost("logout")]
+        [Authorize]
+        public IActionResult Logout([FromBody] LogoutRequest request)
+        {
+            _blacklistService.Blacklist(
+                request.Token,
+                DateTime.UtcNow.AddDays(2)
+            );
+            return Ok(new { message = "登出成功" });
         }
 
         // GET /api/auth/google

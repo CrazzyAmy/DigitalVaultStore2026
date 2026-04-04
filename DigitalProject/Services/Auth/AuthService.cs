@@ -108,48 +108,59 @@ namespace DigitalProject.Services
             return authResponse;
         }
 
-        // Services/AuthService.cs
         public async Task<AuthResponse> GoogleLoginAsync(
-            string email,
-            string displayName,
-            string providerKey,
-            string? avatarUrl)
+      string email,
+      string displayName,
+      string providerKey,
+      string? avatarUrl)
         {
-            // 1. 檢查 Email 是否已存在
-            var user = await _userRepository.GetByEmailAsync(email);
+            // 1. 先用 ProviderKey 查
+            var user = await _userRepository.GetByProviderKeyAsync(providerKey);
 
             if (user == null)
             {
-                // 2. 不存在 → 自動註冊
-                user = new Models.User
+                // 2. 再用 Email 查
+                user = await _userRepository.GetByEmailAsync(email);
+
+                if (user == null)
                 {
-                    Id = Guid.NewGuid(),
-                    Email = email,
-                    DisplayName = displayName,
-                    AvatarUrl = avatarUrl,
-                    Provider = AuthProvider.Google,
-                    ProviderKey = providerKey,
-                    PasswordHash = null,
-                    Role = UserRole.User,
-                    IsActive = true,
-                    CreatedAt = DateTime.UtcNow,
-                };
-                await _userRepository.CreateAsync(user);
-            }
-            else
-            {
-                // 3. 已存在 → 更新 Google 資訊
-                user.ProviderKey = providerKey;
-                user.AvatarUrl = avatarUrl;
-                await _userRepository.UpdateAsync(user);
+                    // 3. 都找不到 → 自動註冊
+                    user = new Models.User
+                    {
+                        Id = Guid.NewGuid(),
+                        Email = email,
+                        DisplayName = displayName,
+                        AvatarUrl = avatarUrl,
+                        Provider = AuthProvider.Google,
+                        ProviderKey = providerKey,
+                        PasswordHash = null,
+                        Role = UserRole.User,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow,
+                    };
+                    await _userRepository.CreateAsync(user);
+                }
+                else
+                {
+                    // 4. Email 找到 → 更新 ProviderKey
+                    user.ProviderKey = providerKey;
+                    user.AvatarUrl = avatarUrl;
+                    await _userRepository.UpdateAsync(user);
+                }
             }
 
-            // 4. 確認帳號啟用
             if (!user.IsActive)
                 throw new AppException("此帳號已被停用", 401);
 
-            // 5. 回傳 JWT
-            return _jwtHelper.GenerateToken(user);
+            // 5. 產生 Token
+            var authResponse = _jwtHelper.GenerateToken(user);
+
+            // 6. ← 新增：儲存 RefreshToken（跟 LoginAsync 一樣）
+            user.RefreshToken = authResponse.RefreshToken;
+            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(180);
+            await _userRepository.UpdateRefreshTokenAsync(user);
+
+            return authResponse;
         }
     }
 }

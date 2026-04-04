@@ -20,13 +20,14 @@ using DigitalProject.Services.Payment;
 using DigitalProject.Services.Prouduct;
 using DigitalProject.Services.Reviews;
 using DigitalProject.Services.User;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Text.Json;
-using Microsoft.AspNetCore.Authentication.Google;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -75,9 +76,10 @@ builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultSignInScheme = "Cookies"; 
 })
-  
-    .AddJwtBearer(options =>
+  .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
+  .AddJwtBearer(options =>
     {
         options.RequireHttpsMetadata = false;
         options.TokenValidationParameters = new TokenValidationParameters
@@ -115,6 +117,7 @@ builder.Services.AddAuthentication(options =>
        options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
        options.CallbackPath = "/signin-google";
+       options.SignInScheme = "Cookies";
    });
 
 
