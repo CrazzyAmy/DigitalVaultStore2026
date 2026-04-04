@@ -2,6 +2,7 @@
 using DigitalProject.Exceptions;
 using DigitalProject.Interface;
 using DigitalProject.Interface.Auth;
+using DigitalProject.Interface.Role;
 using DigitalProject.Interface.User;
 using DigitalProject.Models;
 using DigitalProject.Request;
@@ -21,18 +22,23 @@ namespace DigitalProject.Services
         private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IJwtHelper _jwtHelper;
-        public AuthService(IUserRepository userRepository, IPasswordHasher passwordHasher, IJwtHelper jwtHelper, ITokenBlacklistService blacklistService)
+        private readonly IRoleRepository _roleRepository;
+        public AuthService(IUserRepository userRepository, IPasswordHasher passwordHasher, IJwtHelper jwtHelper, ITokenBlacklistService blacklistService, IRoleRepository roleRepository)
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _jwtHelper = jwtHelper;
             _blacklistService = blacklistService;
-        } 
+            _roleRepository = roleRepository;
+        }
         public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
         {
             // 1. 檢查 Email 是否已存在
             if(await _userRepository.IsEmailExistsAsync(request.Email))
                 throw new AppException("此 Email 已被註冊");
+            var defaultRole = await _roleRepository.GetByCodeAsync("user");
+            if (defaultRole == null)
+                throw new AppException("系統角色設定錯誤", 500);
             // 2. 建立 User
             var user = new Models.User
             {
@@ -41,11 +47,11 @@ namespace DigitalProject.Services
                 DisplayName = request.DisplayName,
                 PasswordHash = _passwordHasher.Hash(request.Password),
                 Provider = AuthProvider.Local,
-                Role = UserRole.User,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
             };
             await _userRepository.CreateAsync(user);
+            await _userRepository.AddRoleAsync(user.Id, defaultRole.Id);
             return new RegisterResponse
             {
                 Message = "註冊成功，請使用 Email 登入",
@@ -107,9 +113,9 @@ namespace DigitalProject.Services
             return authResponse;
         }
 
-      public async Task<AuthResponse> GoogleLoginAsync(
-      string email,
-      string displayName,
+         public async Task<AuthResponse> GoogleLoginAsync(
+             string email,
+             string displayName,
       string providerKey,
       string? avatarUrl)
         {
@@ -123,6 +129,10 @@ namespace DigitalProject.Services
 
                 if (user == null)
                 {
+                    // 查詢預設角色
+                    var defaultRole = await _roleRepository.GetByCodeAsync("user");
+                    if (defaultRole == null)
+                        throw new AppException("系統角色設定錯誤", 500);
                     // 3. 都找不到 → 自動註冊
                     user = new Models.User
                     {
@@ -133,11 +143,11 @@ namespace DigitalProject.Services
                         Provider = AuthProvider.Google,
                         ProviderKey = providerKey,
                         PasswordHash = null,
-                        Role = UserRole.User,
                         IsActive = true,
                         CreatedAt = DateTime.UtcNow,
                     };
                     await _userRepository.CreateAsync(user);
+                    await _userRepository.AddRoleAsync(user.Id, defaultRole.Id);
                 }
                 else
                 {

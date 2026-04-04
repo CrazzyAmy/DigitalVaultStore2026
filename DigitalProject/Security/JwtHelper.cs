@@ -50,9 +50,11 @@ namespace DigitalProject.Security
                 new Claim(JwtRegisteredClaimNames.Sub,   user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.Name,               user.DisplayName),
-                new Claim(ClaimTypes.Role,               user.Role.ToString()),
+                new Claim(ClaimTypes.Name,user.DisplayName),
             };
+            //從 UserRoles 取得所有 Role Code 加入 Claims
+            foreach (var userRole in user.UserRoles)
+                claims.Add(new Claim(ClaimTypes.Role, userRole.Role.Code));
 
             var token = new JwtSecurityToken(
                 issuer: issuer,
@@ -78,7 +80,8 @@ namespace DigitalProject.Security
                 RefreshToken = refreshToken,
                 Email = user.Email,
                 DisplayName = user.DisplayName,
-                Role = user.Role.ToString()
+                Role = string.Join(",",
+                user.UserRoles.Select(ur => ur.Role.Code))
             };
         }
 

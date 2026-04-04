@@ -48,7 +48,7 @@ namespace DigitalProject.Controllers
         // PUT /api/payment/{id}/void
         // 管理員作廢付款
         [HttpPut("{id}/void")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Policy = "CanManagePayment")]
         public async Task<IActionResult> Void(Guid id, [FromBody] VoidPaymentRequest request)
         {
             var adminUserId = GetUserId()!.Value;

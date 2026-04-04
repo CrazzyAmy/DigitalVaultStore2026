@@ -6,12 +6,14 @@ using DigitalProject.Interface.Orders;
 using DigitalProject.Interface.Payment;
 using DigitalProject.Interface.Prouduct;
 using DigitalProject.Interface.Reviews;
+using DigitalProject.Interface.Role;
 using DigitalProject.Interface.User;
 using DigitalProject.Middleware;
 using DigitalProject.Repositories;
 using DigitalProject.Repositories.Payment;
 using DigitalProject.Repositories.Prouduct;
 using DigitalProject.Repositories.Reviews;
+using DigitalProject.Repositories.Role;
 using DigitalProject.Security;
 using DigitalProject.Services;
 using DigitalProject.Services.Payment;
@@ -33,8 +35,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<DigitalVaultStoreDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DbContext")));
 
-// ── Repositories ──────────────────────────────────────────────────────────────
-// Program.cs
+// ── Repositories ─────────────────────────────────────────────────────────────
 builder.Services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
@@ -42,6 +43,7 @@ builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 
 
 // ── Services ──────────────────────────────────────────────────────────────────
@@ -104,7 +106,8 @@ builder.Services.AddAuthentication(options =>
                 var body = new
                 {
                     error = "Unauthorized",
-                    error_description = "Authentication failed"
+                    error_description = "Authentication failed",
+                    //error_detail = context.Error  // ← 新增這行
                 };
                 return context.Response.WriteAsync(JsonSerializer.Serialize(body));
             }
@@ -120,7 +123,21 @@ builder.Services.AddAuthentication(options =>
 
 
 
-builder.Services.AddAuthorization();
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminOnly",
+        p => p.RequireRole("admin"));
+    options.AddPolicy("CanManageProduct",
+        p => p.RequireRole("admin", "manager"));
+    options.AddPolicy("CanViewOrders",
+        p => p.RequireRole("admin", "support"));
+    options.AddPolicy("CanManagePayment",
+        p => p.RequireRole("admin", "support"));
+    options.AddPolicy("CanManageUser",
+        p => p.RequireRole("admin"));
+    options.AddPolicy("CanManageReview",
+        p => p.RequireRole("admin", "support"));
+});
 
 // ── Controllers + Swagger ─────────────────────────────────────────────────────
 builder.Services.AddControllers()
@@ -156,7 +173,6 @@ builder.Services.AddSwaggerGen(c =>
 
 // ── Build ─────────────────────────────────────────────────────────────────────
 var app = builder.Build(); // ← 移到這裡
-app.UseMiddleware<TokenBlacklistMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())
@@ -168,6 +184,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
+app.UseMiddleware<TokenBlacklistMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();

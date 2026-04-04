@@ -10,6 +10,8 @@ namespace DigitalProject.Data
         }
 
         public DbSet<User> Users { get; set; }
+        public DbSet<Role> Roles { get; set; }  
+        public DbSet<UserRole> UserRoles { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<Order> Orders { get; set; }
@@ -21,6 +23,32 @@ namespace DigitalProject.Data
         {
             base.OnModelCreating(modelBuilder);
 
+            // ── UserRole 中間表（複合主鍵）──
+            modelBuilder.Entity<UserRole>(entity =>
+            {
+                entity.HasKey(e => new { e.UserId, e.RoleId });
+
+                entity.HasOne(e => e.User)
+                      .WithMany(u => u.UserRoles)
+                      .HasForeignKey(e => e.UserId)
+                      .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasOne(e => e.Role)
+                      .WithMany(r => r.UserRoles)
+                      .HasForeignKey(e => e.RoleId)
+                      .OnDelete(DeleteBehavior.NoAction);
+            });
+
+            // ── Role ──
+            modelBuilder.Entity<Role>(entity =>
+            {
+                entity.Property(e => e.Name).HasMaxLength(50);
+                entity.Property(e => e.Code).HasMaxLength(20);
+                entity.HasIndex(e => e.Code).IsUnique();  // Code 唯一
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETDATE()");
+            });
+
+            // ── Review ──
             modelBuilder.Entity<Review>()
                 .HasOne(e => e.User)
                 .WithMany(u => u.Reviews)
@@ -38,21 +66,13 @@ namespace DigitalProject.Data
                 .WithMany(o => o.Reviews)
                 .HasForeignKey(e => e.OrderId)
                 .OnDelete(DeleteBehavior.NoAction)
-                .IsRequired(false);  // 模擬用，交易實作後移除
+                .IsRequired(false);
 
+            // ── Payment ──
             modelBuilder.Entity<Payment>(entity =>
             {
-                entity.Property(e => e.PaymentCode)
-                      .HasMaxLength(20);
-
-                entity.Property(e => e.Amount)
-                      .HasColumnType("decimal(10,2)");
-
-                //entity.Property(e => e.Provider)
-                //      .HasConversion<string>();
-
-                //entity.Property(e => e.Status)
-                //      .HasConversion<string>();
+                entity.Property(e => e.PaymentCode).HasMaxLength(20);
+                entity.Property(e => e.Amount).HasColumnType("decimal(10,2)");
 
                 entity.HasOne(e => e.Order)
                       .WithMany(o => o.Payments)
@@ -65,6 +85,6 @@ namespace DigitalProject.Data
                       .IsRequired(false)
                       .OnDelete(DeleteBehavior.NoAction);
             });
-    }
+        }
     }
 }
