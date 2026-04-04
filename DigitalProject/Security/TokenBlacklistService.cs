@@ -1,7 +1,6 @@
-﻿using DigitalProject.Interface.Blacklist;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 
-namespace DigitalProject.Services.Blacklist
+namespace DigitalProject.Security
 {
     public class TokenBlacklistService : ITokenBlacklistService
     {

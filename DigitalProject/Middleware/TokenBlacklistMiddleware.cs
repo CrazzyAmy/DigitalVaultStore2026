@@ -1,4 +1,4 @@
-﻿using DigitalProject.Interface.Blacklist;
+﻿using DigitalProject.Security;
 
 namespace DigitalProject.Middleware
 {

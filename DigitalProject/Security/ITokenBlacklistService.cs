@@ -1,4 +1,4 @@
-﻿namespace DigitalProject.Interface.Blacklist
+﻿namespace DigitalProject.Security
 {
     public interface ITokenBlacklistService
     {

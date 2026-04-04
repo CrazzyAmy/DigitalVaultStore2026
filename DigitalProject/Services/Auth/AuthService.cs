@@ -2,7 +2,6 @@
 using DigitalProject.Exceptions;
 using DigitalProject.Interface;
 using DigitalProject.Interface.Auth;
-using DigitalProject.Interface.Blacklist;
 using DigitalProject.Interface.User;
 using DigitalProject.Models;
 using DigitalProject.Request;
@@ -108,7 +107,7 @@ namespace DigitalProject.Services
             return authResponse;
         }
 
-        public async Task<AuthResponse> GoogleLoginAsync(
+      public async Task<AuthResponse> GoogleLoginAsync(
       string email,
       string displayName,
       string providerKey,
@@ -161,6 +160,16 @@ namespace DigitalProject.Services
             await _userRepository.UpdateRefreshTokenAsync(user);
 
             return authResponse;
+        }
+
+        public  async Task LogoutAsync(Guid userId)
+        {
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user == null) return;
+            user.RefreshToken = null;
+            user.RefreshTokenExpiry = null;
+            await _userRepository.UpdateRefreshTokenAsync(user);
+
         }
     }
 }

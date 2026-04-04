@@ -1,8 +1,8 @@
 ﻿// Controllers/AuthController.cs
 using DigitalProject.Exceptions;
 using DigitalProject.Interface.Auth;
-using DigitalProject.Interface.Blacklist;
 using DigitalProject.Request;
+using DigitalProject.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
@@ -65,12 +65,17 @@ namespace DigitalProject.Controllers
         // POST /api/auth/logout
         [HttpPost("logout")]
         [Authorize]
-        public IActionResult Logout([FromBody] LogoutRequest request)
+        public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
         {
+            // 1. Access Token 加入黑名單
             _blacklistService.Blacklist(
                 request.Token,
                 DateTime.UtcNow.AddDays(2)
             );
+            // 2. 清除 RefreshToken
+            var userId = GetUserId()!.Value;
+            await _authService.LogoutAsync(userId);
+
             return Ok(new { message = "登出成功" });
         }
 

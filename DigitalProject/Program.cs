@@ -1,7 +1,6 @@
 ﻿using DigitalProject.Data;
 using DigitalProject.Interface;
 using DigitalProject.Interface.Auth;
-using DigitalProject.Interface.Blacklist;
 using DigitalProject.Interface.Category;
 using DigitalProject.Interface.Orders;
 using DigitalProject.Interface.Payment;
@@ -15,7 +14,6 @@ using DigitalProject.Repositories.Prouduct;
 using DigitalProject.Repositories.Reviews;
 using DigitalProject.Security;
 using DigitalProject.Services;
-using DigitalProject.Services.Blacklist;
 using DigitalProject.Services.Payment;
 using DigitalProject.Services.Prouduct;
 using DigitalProject.Services.Reviews;
