@@ -82,6 +82,7 @@ builder.Services.AddAuthentication(options =>
   .AddJwtBearer(options =>
     {
         options.RequireHttpsMetadata = false;
+        options.IncludeErrorDetails = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -99,7 +100,7 @@ builder.Services.AddAuthentication(options =>
         {
             OnChallenge = context =>
             {
-                options.IncludeErrorDetails = false;
+              
                 context.HandleResponse();
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = 401;
