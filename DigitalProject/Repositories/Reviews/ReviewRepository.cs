@@ -3,6 +3,7 @@ using DigitalProject.Data;
 using DigitalProject.Interface.Reviews;
 using DigitalProject.Models;
 using Microsoft.EntityFrameworkCore;
+using DigitalProject.Domain;
 
 namespace DigitalProject.Repositories.Reviews
 {
@@ -49,11 +50,12 @@ namespace DigitalProject.Repositories.Reviews
         // 確認是否已購買
         public async Task<bool> HasPurchasedAsync(Guid userId, Guid productId) =>
             await _context.OrderItems
-                .AnyAsync(oi =>
+                   .AnyAsync(oi =>
                     oi.ProductId == productId &&
                     oi.Order.UserId == userId &&
-                    (oi.Order.Status == Domain.OrderStatus.Paid ||
-                     oi.Order.Status == Domain.OrderStatus.Completed));
+                    (oi.Order.Status == OrderStatus.Paid ||
+                     oi.Order.Status == OrderStatus.Completed));
+
 
         // 防止同一筆訂單對同一商品重複評論
         public async Task<bool> ExistsAsync(Guid userId, Guid productId, Guid orderId) =>
@@ -63,10 +65,10 @@ namespace DigitalProject.Repositories.Reviews
                     r.ProductId == productId &&
                     r.OrderId == orderId);
 
-        public async Task<bool> CreateAsync(Review review)
+        public async Task CreateAsync(Review review)
         {
             await _context.Reviews.AddAsync(review);
-            return await _context.SaveChangesAsync() > 0;
+            await _context.SaveChangesAsync();
         }
 
         public async Task<bool> UpdateAsync(Review review)

@@ -12,7 +12,7 @@ namespace DigitalProject.Interface.Reviews
         Task<bool> HasReviewedAsync(Guid userId, Guid productId);
         Task<bool> HasPurchasedAsync(Guid userId, Guid productId);
         Task<bool> ExistsAsync(Guid userId, Guid productId, Guid orderId);
-        Task<bool> CreateAsync(Review review);
+        Task CreateAsync(Review review);
         Task<bool> UpdateAsync(Review review);
         Task<bool> DeleteAsync(Guid id);
     }
