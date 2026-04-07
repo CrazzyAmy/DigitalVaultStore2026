@@ -1,4 +1,5 @@
 ﻿using DigitalProject.Data;
+using DigitalProject.Domain;
 using DigitalProject.Exceptions;
 using DigitalProject.Interface;
 using DigitalProject.Interface.User;
@@ -21,14 +22,27 @@ namespace DigitalProject.Services.User
             _passwordHasher = passwordHasher;
             _dbcontext = dbcontext;
         }
+        // 現在：同一個商品買多次會回傳多筆
+        // 前端 key={p.productId} 就會重複
+
         public async Task<List<PurchaseResponse>> GetPurchasesAsync(Guid userId)
         {
-           return await _dbcontext.OrderItems
+            // 1. 先從資料庫撈資料
+            var orderItems = await _dbcontext.OrderItems
                 .Include(oi => oi.Product)
-                .ThenInclude(p=>p.Category)
-                .Include(oi=>oi.Order)
-                .Where(oi => oi.Order.UserId == userId)
-                .Select(oi=>new PurchaseResponse
+                    .ThenInclude(p => p.Category)
+                .Include(oi => oi.Order)
+                .Where(oi =>
+                    oi.Order.UserId == userId &&
+                    (oi.Order.Status == OrderStatus.Paid ||
+                     oi.Order.Status == OrderStatus.Completed))
+                .ToListAsync();  // ← 先 ToList，之後在記憶體做 GroupBy
+
+            // 2. 在記憶體做 GroupBy 去重
+            return orderItems
+                .GroupBy(oi => oi.ProductId)
+                .Select(g => g.OrderByDescending(oi => oi.Order.CreatedAt).First())
+                .Select(oi => new PurchaseResponse
                 {
                     ProductId = oi.ProductId,
                     Name = oi.Product.Name,
@@ -40,7 +54,7 @@ namespace DigitalProject.Services.User
                     CategoryName = oi.Product.Category.Name,
                     PurchasedAt = oi.Order.CreatedAt
                 })
-                .ToListAsync();
+                .ToList();
         }
 
         public async Task UpdateDisplayNameAsync(Guid userId, UpdateDisplayNameRequest request)

@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing.Tree;
 using System.Security.Claims;
 
 namespace DigitalProject.Controllers
@@ -17,6 +18,19 @@ namespace DigitalProject.Controllers
     {
         private readonly IAuthService _authService;
         private readonly ITokenBlacklistService _blacklistService;
+        private void SetRefreshTokenCookie(string refreshToken)
+        {
+            var cookieOptions = new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = DateTime.UtcNow.AddDays(7), // 與 Refresh Token 的有效期一致
+                Path = "/api/auth/refresh",
+                IsEssential = true
+            };
+            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+        }
 
         public AuthController(IAuthService authService, ITokenBlacklistService blacklistService)
         {
@@ -39,7 +53,16 @@ namespace DigitalProject.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var result = await _authService.LoginAsync(request);
-            return Ok(result);
+            SetTokenCookies(result.Token, result.RefreshToken);
+
+            // Body 只回傳使用者資訊，不含 Token
+            return Ok(new
+            {
+                result.Id,
+                result.Email,
+                result.DisplayName,
+                result.Role
+            });
         }
 
         // POST /api/auth/refresh
@@ -53,11 +76,20 @@ namespace DigitalProject.Controllers
             try
             {
                 var result = await _authService.RefreshAsync(request);
-                return Ok(result);
+
+                // ← 更新 Cookie
+                SetTokenCookies(result.Token, result.RefreshToken);
+
+                return Ok(new
+                {
+                    result.Id,
+                    result.Email,
+                    result.DisplayName,
+                    result.Role
+                });
             }
             catch (UnauthorizedAccessException ex)
             {
-                // ex.Message 就是 "refresh_token_expired" 或 "refresh_token_revoked"
                 return Unauthorized(new { error = ex.Message });
             }
         }
@@ -65,19 +97,23 @@ namespace DigitalProject.Controllers
         // POST /api/auth/logout
         [HttpPost("logout")]
         [Authorize]
-        public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+        public async Task<IActionResult> Logout()
         {
-            // 1. Access Token 加入黑名單
-            _blacklistService.Blacklist(
-                request.Token,
-                DateTime.UtcNow.AddDays(2)
-            );
-            // 2. 清除 RefreshToken
+            // 1. 從 Cookie 取得 Token 加入黑名單
+            var token = Request.Cookies["access_token"];
+            if (!string.IsNullOrEmpty(token))
+                _blacklistService.Blacklist(token, DateTime.UtcNow.AddDays(2));
+
+            // 2. 清除 DB 的 RefreshToken
             var userId = GetUserId()!.Value;
             await _authService.LogoutAsync(userId);
 
+            // 3. 清除 Cookie
+            DeleteTokenCookies();
+
             return Ok(new { message = "登出成功" });
         }
+
 
         // GET /api/auth/google
         // 導向 Google 授權頁面
@@ -101,7 +137,7 @@ namespace DigitalProject.Controllers
         {
             // 1. 取得 Google 回傳的使用者資訊
             var result = await HttpContext.AuthenticateAsync(
-                GoogleDefaults.AuthenticationScheme);
+        GoogleDefaults.AuthenticationScheme);
 
             if (!result.Succeeded)
                 throw new AppException("Google 登入失敗", 401);
@@ -117,13 +153,50 @@ namespace DigitalProject.Controllers
             if (email == null || providerKey == null)
                 throw new AppException("無法取得 Google 使用者資訊", 401);
 
-            // 2. 登入或自動註冊
             var authResult = await _authService.GoogleLoginAsync(
                 email, name ?? email, providerKey, avatarUrl);
 
-            // 3. 導向前端並帶上 Token
-            var frontendUrl = $"http://localhost:5173/auth/callback?token={authResult.Token}";
+            // ← 存入 HttpOnly Cookie
+            SetTokenCookies(authResult.Token, authResult.RefreshToken);
+
+            // 導向前端（不帶 Token，改用 Cookie）
+            var frontendUrl = $"http://localhost:5173/auth/callback" +
+                              $"?displayName={Uri.EscapeDataString(authResult.DisplayName)}" +
+                              $"&email={Uri.EscapeDataString(authResult.Email)}" +
+                              $"&role={authResult.Role}";
+
             return Redirect(frontendUrl);
+        }
+
+        // ── Cookie Helper ──────────────────────────────────────────
+        private void SetTokenCookies(string accessToken, string refreshToken)
+        {
+            var isDev = HttpContext.RequestServices
+                .GetRequiredService<IWebHostEnvironment>()
+                .IsDevelopment();
+
+            // 因為現在同源了，用 Lax 就好
+            Response.Cookies.Append("access_token", accessToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = false,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(2)
+            });
+
+            Response.Cookies.Append("refresh_token", refreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = false,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(180)
+            });
+        }
+
+        private void DeleteTokenCookies()
+        {
+            Response.Cookies.Delete("access_token");
+            Response.Cookies.Delete("refresh_token");
         }
     }
 }

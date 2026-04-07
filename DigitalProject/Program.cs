@@ -91,7 +91,7 @@ builder.Services.AddCors(options =>
 // SameSite=None 是跨域 Cookie 的硬性要求，瀏覽器預設 Lax 會直接擋掉
 builder.Services.Configure<CookiePolicyOptions>(options =>
 {
-    options.MinimumSameSitePolicy = SameSiteMode.None;
+    options.MinimumSameSitePolicy = SameSiteMode.Lax;
     options.HttpOnly = Microsoft.AspNetCore.CookiePolicy.HttpOnlyPolicy.Always;
     options.Secure = builder.Environment.IsDevelopment()
                                         ? CookieSecurePolicy.SameAsRequest // Dev 允許 http localhost
@@ -127,6 +127,16 @@ builder.Services.AddAuthentication(options =>
     };
     options.Events = new JwtBearerEvents
     {
+        OnMessageReceived = context =>
+        {
+            // 從 Cookie 中讀取 JWT Token
+            var accessToken = context.Request.Cookies["access_token"];
+            if (!string.IsNullOrEmpty(accessToken))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        },
         OnChallenge = context =>
         {
             context.HandleResponse();
