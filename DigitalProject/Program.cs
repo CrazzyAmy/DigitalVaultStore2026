@@ -35,7 +35,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<DigitalVaultStoreDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DbContext")));
 
-// ── Repositories ─────────────────────────────────────────────────────────────
+// ── Repositories ──────────────────────────────────────────────────────────────
 builder.Services.AddSingleton<ITokenBlacklistService, TokenBlacklistService>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
@@ -44,7 +44,6 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IReviewRepository, ReviewRepository>();
 builder.Services.AddScoped<IPaymentRepository, PaymentRepository>();
 builder.Services.AddScoped<IRoleRepository, RoleRepository>();
-
 
 // ── Services ──────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IProductService, ProductService>();
@@ -60,84 +59,105 @@ builder.Services.AddScoped<IJwtHelper, JwtHelper>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
+// [修改] 加入 AllowCredentials()，HttpOnly Cookie 跨域傳輸必須
+// [修改] 區分 Dev / Production 環境，Production 讀 appsettings
 builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend", policy =>
-        policy.WithOrigins("http://localhost:5173")
-              .AllowAnyHeader()
-              .AllowAnyMethod()));
+    {
+        if (builder.Environment.IsDevelopment())
+        {
+            policy.WithOrigins(
+                    "http://localhost:5173",
+                    "https://localhost:5173"
+                  )
+                  .AllowCredentials()   // ← 新增：Cookie 跨域必須
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
+        else
+        {
+            policy.WithOrigins(
+                    builder.Configuration["Cors:AllowedOrigin"]
+                        ?? throw new InvalidOperationException("Cors:AllowedOrigin is not configured.")
+                  )
+                  .AllowCredentials()   // ← 新增：Cookie 跨域必須
+                  .AllowAnyHeader()
+                  .AllowAnyMethod();
+        }
+    }));
+
+// ── Cookie Policy ─────────────────────────────────────────────────────────────
+// [新增] 跨域 HttpOnly Cookie 全域安全規則
+// SameSite=None 是跨域 Cookie 的硬性要求，瀏覽器預設 Lax 會直接擋掉
+builder.Services.Configure<CookiePolicyOptions>(options =>
+{
+    options.MinimumSameSitePolicy = SameSiteMode.None;
+    options.HttpOnly = Microsoft.AspNetCore.CookiePolicy.HttpOnlyPolicy.Always;
+    options.Secure = builder.Environment.IsDevelopment()
+                                        ? CookieSecurePolicy.SameAsRequest // Dev 允許 http localhost
+                                        : CookieSecurePolicy.Always;       // Production 強制 https
+});
 
 // ── JWT ───────────────────────────────────────────────────────────────────────
-
 var jwtSettings = builder.Configuration.GetSection("JwtTokenSettings");
-
-
 
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultSignInScheme = "Cookies"; 
+    options.DefaultSignInScheme = "Cookies";
 })
-  .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
-  .AddJwtBearer(options =>
+.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme)
+.AddJwtBearer(options =>
+{
+    options.RequireHttpsMetadata = false;
+    options.IncludeErrorDetails = false;
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.RequireHttpsMetadata = false;
-        options.IncludeErrorDetails = false;
-        options.TokenValidationParameters = new TokenValidationParameters
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        RequireExpirationTime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+                                       Encoding.UTF8.GetBytes(jwtSettings["IssuerSigningKey"]!)),
+        ClockSkew = TimeSpan.Zero,
+    };
+    options.Events = new JwtBearerEvents
+    {
+        OnChallenge = context =>
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            RequireExpirationTime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtSettings["Issuer"],
-            ValidAudience = jwtSettings["Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(
-                                           Encoding.UTF8.GetBytes(jwtSettings["IssuerSigningKey"]!)),
-            ClockSkew = TimeSpan.Zero,
-        };
-        options.Events = new JwtBearerEvents
-        {
-            OnChallenge = context =>
+            context.HandleResponse();
+            context.Response.ContentType = "application/json";
+            context.Response.StatusCode = 401;
+            var body = new
             {
-              
-                context.HandleResponse();
-                context.Response.ContentType = "application/json";
-                context.Response.StatusCode = 401;
-                var body = new
-                {
-                    error = "Unauthorized",
-                    error_description = "Authentication failed",
-                    //error_detail = context.Error  // ← 新增這行
-                };
-                return context.Response.WriteAsync(JsonSerializer.Serialize(body));
-            }
-        };
-    })
-  .AddGoogle(options =>
-   {
-       options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
-       options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
-       options.CallbackPath = "/signin-google";
-       options.SignInScheme = "Cookies";
-   });
+                error = "Unauthorized",
+                error_description = "Authentication failed",
+            };
+            return context.Response.WriteAsync(JsonSerializer.Serialize(body));
+        }
+    };
+})
+.AddGoogle(options =>
+{
+    options.ClientId = builder.Configuration["Authentication:Google:ClientId"]!;
+    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]!;
+    options.CallbackPath = "/signin-google";
+    options.SignInScheme = "Cookies";
+});
 
-
-
+// ── Authorization ─────────────────────────────────────────────────────────────
 builder.Services.AddAuthorization(options =>
 {
-    options.AddPolicy("AdminOnly",
-        p => p.RequireRole("admin"));
-    options.AddPolicy("CanManageProduct",
-        p => p.RequireRole("admin", "manager"));
-    options.AddPolicy("CanViewOrders",
-        p => p.RequireRole("admin", "support"));
-    options.AddPolicy("CanManagePayment",
-        p => p.RequireRole("admin", "support"));
-    options.AddPolicy("CanManageUser",
-        p => p.RequireRole("admin"));
-    options.AddPolicy("CanManageReview",
-        p => p.RequireRole("admin", "support"));
+    options.AddPolicy("AdminOnly", p => p.RequireRole("admin"));
+    options.AddPolicy("CanManageProduct", p => p.RequireRole("admin", "manager"));
+    options.AddPolicy("CanViewOrders", p => p.RequireRole("admin", "support"));
+    options.AddPolicy("CanManagePayment", p => p.RequireRole("admin", "support"));
+    options.AddPolicy("CanManageUser", p => p.RequireRole("admin"));
+    options.AddPolicy("CanManageReview", p => p.RequireRole("admin", "support"));
 });
 
 // ── Controllers + Swagger ─────────────────────────────────────────────────────
@@ -170,10 +190,12 @@ builder.Services.AddSwaggerGen(c =>
             }
         }] = []
     });
-}); // ← SwaggerGen 在這裡結束
+});
 
 // ── Build ─────────────────────────────────────────────────────────────────────
-var app = builder.Build(); // ← 移到這裡
+var app = builder.Build();
+
+// GlobalExceptionMiddleware 最外層，捕捉所有未處理例外
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 if (app.Environment.IsDevelopment())
@@ -183,9 +205,22 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// ⚠️ Pipeline 順序硬性規定：
+// CORS → CookiePolicy → Authentication → TokenBlacklist → Authorization → Controllers
+
 app.UseCors("AllowFrontend");
+
+// [新增] Cookie 全域安全策略，必須在 UseAuthentication 之前
+// 確保所有 Set-Cookie 都套用 HttpOnly / Secure / SameSite=None
+app.UseCookiePolicy();
+
 app.UseAuthentication();
+
+// TokenBlacklist 在 Authentication 之後、Authorization 之前
+// 確保 JWT 已解析完才做黑名單比對
 app.UseMiddleware<TokenBlacklistMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllers();
