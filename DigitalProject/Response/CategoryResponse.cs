@@ -7,5 +7,6 @@
         public string Slug { get; set; } = null!;
         public string? Description { get; set; }
         public int SortOrder { get; set; }
+        public bool IsVisible { get; set; }  // ← 新增
     }
 }
