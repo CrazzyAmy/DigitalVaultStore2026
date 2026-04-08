@@ -45,7 +45,23 @@ namespace DigitalProject.Repositories
             order.Status = status;
             await _db.SaveChangesAsync();
         }
-   
+
+        // 後台查所有訂單
+        public async Task<List<Order>> GetAllAdminAsync() =>
+            await _db.Orders
+                .Include(o => o.User)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(i => i.Product)
+                .OrderByDescending(o => o.CreatedAt)
+                .ToListAsync();
+
+        // 後台查單一訂單
+        public async Task<Order?> GetByIdAdminAsync(Guid id) =>
+            await _db.Orders
+                .Include(o => o.User)
+                .Include(o => o.OrderItems)
+                    .ThenInclude(i => i.Product)
+                .FirstOrDefaultAsync(o => o.Id == id);
 
     }
 }

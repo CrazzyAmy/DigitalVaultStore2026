@@ -19,5 +19,9 @@ namespace DigitalProject.Response
             _ => "未知"
         };
         public List<OrderItemResponse> Items { get; set; } = new();
+
+        // 後台新增
+        public string? UserEmail { get; set; }        
+        public string? UserDisplayName { get; set; }
     }
 }

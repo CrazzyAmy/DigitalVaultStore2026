@@ -115,28 +115,52 @@ namespace DigitalProject.Services
             };
         }
 
+        // 後台查所有訂單
+        public async Task<IEnumerable<OrderResponse>> GetAllAdminAsync()
+        {
+            var orders = await _orderRepository.GetAllAdminAsync();
+            return orders.Select(MapToResponse);
+        }
 
+        // 後台查單一訂單
+        public async Task<OrderResponse?> GetByIdAdminAsync(Guid id)
+        {
+            var order = await _orderRepository.GetByIdAdminAsync(id);
+            return order == null ? null : MapToResponse(order);
+        }
+
+        // 後台更新訂單狀態
+        public async Task UpdateOrderStatusAsync(Guid id, UpdateOrderRequest request)
+        {
+            var order = await _orderRepository.GetByIdAsync(id);
+            if (order == null)
+                throw new AppException("訂單不存在", 404);
+
+            await _orderRepository.UpdateStatusAsync(id, request.Status);
+        }
 
 
         private OrderResponse MapToResponse(Order o)
-     => new()
-     {
-         Id = o.Id,
-         UserId = o.UserId,
-         OrderNo = o.OrderNo,
-         TotalAmount = o.TotalAmount,
-         Status = o.Status,
-         CreatedAt = o.CreatedAt,
-         Items = o.OrderItems.Select(i => new OrderItemResponse
+         => new()
          {
-             Id = i.Id,
-             ProductId = i.ProductId,
-             ProductName = i.ProductName,
-             UnitPrice = i.UnitPrice,
-             Quantity = i.Quantity,
-             SubTotal = i.SubTotal,
-         }).ToList(),
-     };
+             Id = o.Id,
+             UserId = o.UserId,
+             OrderNo = o.OrderNo,
+             TotalAmount = o.TotalAmount,
+             Status = o.Status,
+             CreatedAt = o.CreatedAt,
+             UserEmail = o.User?.Email,          
+             UserDisplayName = o.User?.DisplayName,
+             Items = o.OrderItems.Select(i => new OrderItemResponse
+             {
+                 Id = i.Id,
+                 ProductId = i.ProductId,
+                 ProductName = i.ProductName,
+                 UnitPrice = i.UnitPrice,
+                 Quantity = i.Quantity,
+                 SubTotal = i.SubTotal,
+             }).ToList(),
+         };
 
 
     }
