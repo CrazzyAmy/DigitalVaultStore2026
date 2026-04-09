@@ -45,15 +45,6 @@ namespace DigitalProject.Controllers
             return Ok(result);
         }
 
-        // PUT /api/payment/{id}/void
-        // 管理員作廢付款
-        [HttpPut("{id}/void")]
-        [Authorize(Policy = "CanManagePayment")]
-        public async Task<IActionResult> Void(Guid id, [FromBody] VoidPaymentRequest request)
-        {
-            var adminUserId = GetUserId()!.Value;
-            var result = await _paymentService.VoidAsync(adminUserId, id, request.Reason);
-            return Ok(result);
-        }
+        
     }
 }

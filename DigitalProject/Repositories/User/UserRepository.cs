@@ -92,5 +92,52 @@ namespace DigitalProject.Repositories
             await _dbcontext.UserRoles.AddAsync(userRole);
             await _dbcontext.SaveChangesAsync();
         }
+
+        // 查所有使用者
+        public async Task<List<User>> GetAllAsync() =>
+            await _dbcontext.Users
+                .Include(u => u.UserRoles)
+                    .ThenInclude(ur => ur.Role)
+                .OrderByDescending(u => u.CreatedAt)
+                .ToListAsync();
+
+        // 停用帳號
+        public async Task DeactivateAsync(Guid id)
+        {
+            var user = await _dbcontext.Users.FindAsync(id);
+            if (user == null) return;
+            user.IsActive = false;
+            await _dbcontext.SaveChangesAsync();
+        }
+
+        // 啟用帳號
+        public async Task ActivateAsync(Guid id)
+        {
+            var user = await _dbcontext.Users.FindAsync(id);
+            if (user == null) return;
+            user.IsActive = true;
+            await _dbcontext.SaveChangesAsync();
+        }
+
+        // 修改角色
+        public async Task UpdateRoleAsync(Guid userId, Guid roleId)
+        {
+            // 先移除所有舊角色
+            var existing = await _dbcontext.UserRoles
+                .Where(ur => ur.UserId == userId)
+                .ToListAsync();
+            _dbcontext.UserRoles.RemoveRange(existing);
+
+            // 新增新角色
+            await _dbcontext.UserRoles.AddAsync(new UserRole
+            {
+                UserId = userId,
+                RoleId = roleId,
+                AssignedAt = DateTime.UtcNow
+            });
+
+            await _dbcontext.SaveChangesAsync();
+        }
+
     }
 }

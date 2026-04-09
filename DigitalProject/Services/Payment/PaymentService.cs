@@ -195,5 +195,11 @@ namespace DigitalProject.Services.Payment
             PaymentCode = p.PaymentCode,
             ExpiresAt = p.ExpiresAt,
         };
+        public async Task<List<PaymentResponse>> GetAllAsync()
+        {
+            var payments = await _paymentRepository.GetAllAsync();
+            return payments.Select(p =>
+                MapToResponse(p, p.Order?.OrderNo ?? string.Empty)).ToList();
+        }
     }
 }

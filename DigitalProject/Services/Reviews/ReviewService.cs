@@ -135,5 +135,11 @@ namespace DigitalProject.Services.Reviews
             Comment = review.Comment,
             CreatedAt = review.CreatedAt
         };
+
+        public async Task<List<ReviewResponse>> GetAllAsync()
+        {
+            var reviews = await _reviewRepository.GetAllAsync();
+            return reviews.Select(MapToResponse).ToList();
+        }
     }
 }

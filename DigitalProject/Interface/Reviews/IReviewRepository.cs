@@ -15,5 +15,6 @@ namespace DigitalProject.Interface.Reviews
         Task CreateAsync(Review review);
         Task<bool> UpdateAsync(Review review);
         Task<bool> DeleteAsync(Guid id);
+        Task<List<Review>> GetAllAsync();
     }
 }

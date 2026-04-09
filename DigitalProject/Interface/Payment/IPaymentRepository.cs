@@ -9,6 +9,6 @@ namespace DigitalProject.Interface.Payment
         Task<Models.Payment?> GetActiveByOrderIdAsync(Guid orderId);
         Task<bool> CreateAsync(Models.Payment payment);
         Task<bool> UpdateAsync(Models.Payment payment);
-
+        Task<List<Models.Payment>> GetAllAsync();
     }
 }

@@ -1,12 +1,13 @@
-﻿using DigitalProject.Data;
+﻿// Services/User/UserService.cs
+using DigitalProject.Data;
 using DigitalProject.Domain;
 using DigitalProject.Exceptions;
 using DigitalProject.Interface;
+using DigitalProject.Interface.Role;
 using DigitalProject.Interface.User;
 using DigitalProject.Request;
 using DigitalProject.Response;
 using DigitalProject.Security;
-using DigitalProject.Services.User;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigitalProject.Services.User
@@ -16,18 +17,50 @@ namespace DigitalProject.Services.User
         private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher _passwordHasher;
         private readonly DigitalVaultStoreDbContext _dbcontext;
-        public UserService(IUserRepository userRepository, IPasswordHasher passwordHasher, DigitalVaultStoreDbContext dbcontext)
+        private readonly IRoleRepository _roleRepository;  
+
+        public UserService(
+            IUserRepository userRepository,
+            IPasswordHasher passwordHasher,
+            DigitalVaultStoreDbContext dbcontext,
+            IRoleRepository roleRepository)  
         {
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
             _dbcontext = dbcontext;
+            _roleRepository = roleRepository;
         }
-        // 現在：同一個商品買多次會回傳多筆
-        // 前端 key={p.productId} 就會重複
+
+        // ── 前台 ──────────────────────────────────────────────
+
+        public async Task UpdateDisplayNameAsync(Guid userId, UpdateDisplayNameRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.DisplayName))
+                throw new AppException("顯示名稱不可為空", 400);
+
+            var user = await _userRepository.GetByIdAsync(userId)
+                ?? throw new AppException("找不到使用者", 404);
+
+            await _userRepository.UpdateDisplayNameAsync(userId, request.DisplayName);
+        }
+
+        public async Task UpdatePasswordAsync(Guid userId, UpdatePasswordRequest request)
+        {
+            var user = await _userRepository.GetByIdAsync(userId)
+                ?? throw new AppException("找不到使用者", 404);
+
+            if (!_passwordHasher.Verify(request.CurrentPassword, user.PasswordHash!))
+                throw new AppException("目前密碼錯誤", 401);
+
+            if (request.NewPassword.Length < 8)
+                throw new AppException("新密碼至少需要 8 個字元", 400);
+
+            var newHash = _passwordHasher.Hash(request.NewPassword);
+            await _userRepository.UpdatePasswordAsync(userId, newHash);
+        }
 
         public async Task<List<PurchaseResponse>> GetPurchasesAsync(Guid userId)
         {
-            // 1. 先從資料庫撈資料
             var orderItems = await _dbcontext.OrderItems
                 .Include(oi => oi.Product)
                     .ThenInclude(p => p.Category)
@@ -36,9 +69,8 @@ namespace DigitalProject.Services.User
                     oi.Order.UserId == userId &&
                     (oi.Order.Status == OrderStatus.Paid ||
                      oi.Order.Status == OrderStatus.Completed))
-                .ToListAsync();  // ← 先 ToList，之後在記憶體做 GroupBy
+                .ToListAsync();
 
-            // 2. 在記憶體做 GroupBy 去重
             return orderItems
                 .GroupBy(oi => oi.ProductId)
                 .Select(g => g.OrderByDescending(oi => oi.Order.CreatedAt).First())
@@ -57,33 +89,68 @@ namespace DigitalProject.Services.User
                 .ToList();
         }
 
-        public async Task UpdateDisplayNameAsync(Guid userId, UpdateDisplayNameRequest request)
+        // ── 後台 ──────────────────────────────────────────────
+
+        public async Task<IEnumerable<AdminUserResponse>> GetAllAsync()
         {
-            if (string.IsNullOrWhiteSpace(request.DisplayName))
-                throw new AppException("顯示名稱不可為空", 400);
-
-            var user = await _userRepository.GetByIdAsync(userId)
-                ?? throw new AppException("找不到使用者", 404);
-
-          
-            await _userRepository.UpdateDisplayNameAsync(userId, request.DisplayName);
+            var users = await _userRepository.GetAllAsync();
+            return users.Select(MapToAdminResponse);
         }
 
-        public async Task UpdatePasswordAsync(Guid userId, UpdatePasswordRequest request)
+        public async Task<AdminUserResponse?> GetByIdAsync(Guid id)
         {
-            var user = await _userRepository.GetByIdAsync(userId)
-                  ?? throw new AppException("找不到使用者", 404);
-
-            // 驗證目前密碼
-            if (!_passwordHasher.Verify(request.CurrentPassword, user.PasswordHash!))
-                throw new AppException("目前密碼錯誤", 401);
-
-            // 驗證新密碼長度
-            if (request.NewPassword.Length < 8)
-                throw new AppException("新密碼至少需要 8 個字元", 400);
-
-            var newHash = _passwordHasher.Hash(request.NewPassword);
-            await _userRepository.UpdatePasswordAsync(userId, newHash);
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null)
+                throw new AppException("使用者不存在", 404);
+            return MapToAdminResponse(user);
         }
+
+        public async Task DeactivateAsync(Guid id)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null)
+                throw new AppException("使用者不存在", 404);
+            if (!user.IsActive)
+                throw new AppException("此帳號已停用");
+
+            await _userRepository.DeactivateAsync(id);
+        }
+
+        public async Task ActivateAsync(Guid id)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null)
+                throw new AppException("使用者不存在", 404);
+            if (user.IsActive)
+                throw new AppException("此帳號已啟用");
+
+            await _userRepository.ActivateAsync(id);
+        }
+
+        public async Task UpdateRoleAsync(Guid id, UpdateUserRoleRequest request)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null)
+                throw new AppException("使用者不存在", 404);
+
+            var role = await _roleRepository.GetByCodeAsync(request.RoleCode);
+            if (role == null)
+                throw new AppException("角色不存在", 404);
+
+            await _userRepository.UpdateRoleAsync(id, role.Id);
+        }
+
+        // ── MapToAdminResponse ─────────────────────────────────
+        private static AdminUserResponse MapToAdminResponse(Models.User u) => new()
+        {
+            Id = u.Id,
+            Email = u.Email,
+            DisplayName = u.DisplayName,
+            AvatarUrl = u.AvatarUrl,
+            IsActive = u.IsActive,
+            Provider = u.Provider.ToString(),
+            CreatedAt = u.CreatedAt,
+            Roles = u.UserRoles.Select(ur => ur.Role.Code).ToList()
+        };
     }
 }

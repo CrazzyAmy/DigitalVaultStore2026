@@ -84,13 +84,5 @@ namespace DigitalProject.Controllers
             return Ok(new { message = "評論已刪除" });
         }
 
-        // DELETE /api/review/{id}/admin
-        [HttpDelete("{id}/admin")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> AdminDelete(Guid id)
-        {
-            await _reviewService.AdminDeleteAsync(id);
-            return Ok(new { message = "評論已刪除" });
-        }
     }
 }

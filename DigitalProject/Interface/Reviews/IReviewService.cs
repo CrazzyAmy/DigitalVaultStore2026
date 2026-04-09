@@ -14,5 +14,6 @@ namespace DigitalProject.Interface.Reviews
         Task UpdateAsync(Guid userId, Guid reviewId, UpdateReviewRequest request);     // ← 拿掉 tuple
         Task DeleteAsync(Guid userId, Guid reviewId);                                  // ← 拿掉 tuple
         Task AdminDeleteAsync(Guid reviewId);
+        Task<List<ReviewResponse>> GetAllAsync();
     }
 }

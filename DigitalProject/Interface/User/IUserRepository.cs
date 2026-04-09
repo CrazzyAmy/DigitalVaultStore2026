@@ -19,5 +19,10 @@ namespace DigitalProject.Interface.User
         Task<Models.User?> GetByRefreshTokenAsync(string refreshToken);
         Task UpdateAsync(Models.User user);
         Task AddRoleAsync(Guid userId, Guid roleId);
+        Task<List<Models.User?>> GetAllAsync();                  
+        Task DeactivateAsync(Guid id);                          
+        Task ActivateAsync(Guid id);                            
+        Task UpdateRoleAsync(Guid userId, Guid roleId);         
+
     }
 }

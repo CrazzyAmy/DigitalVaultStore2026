@@ -1,8 +1,12 @@
-﻿namespace DigitalProject.Request
+﻿// UpdatePasswordRequest 補上驗證
+using System.ComponentModel.DataAnnotations;
+
+public class UpdatePasswordRequest
 {
-    public class UpdatePasswordRequest
-    {
-        public string CurrentPassword { get; set; } = string.Empty;
-        public string NewPassword { get; set; } = string.Empty;
-    }
+    [Required]
+    public string CurrentPassword { get; set; } = string.Empty;
+
+    [Required]
+    [MinLength(8, ErrorMessage = "新密碼至少 8 個字元")]
+    public string NewPassword { get; set; } = string.Empty;
 }

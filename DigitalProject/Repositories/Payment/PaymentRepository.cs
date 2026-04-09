@@ -47,5 +47,11 @@ namespace DigitalProject.Repositories.Payment
             return await _context.SaveChangesAsync() > 0;
         }
 
+        public async Task<List<Models.Payment>> GetAllAsync() =>
+        await _context.Payments
+            .Include(p => p.Order)
+            .Include(p => p.VoidByUser)
+            .OrderByDescending(p => p.PaidAt)
+            .ToListAsync();
     }
 }

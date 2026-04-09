@@ -84,5 +84,12 @@ namespace DigitalProject.Repositories.Reviews
             _context.Reviews.Remove(review);
             return await _context.SaveChangesAsync() > 0;
         }
+        public async Task<List<Review>> GetAllAsync() =>
+        await _context.Reviews
+            .Include(r => r.User)
+            .Include(r => r.Product)
+            .OrderByDescending(r => r.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync();
     }
 }
