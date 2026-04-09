@@ -170,6 +170,12 @@ namespace DigitalProject.Services.Payment
             if (expiry < DateTime.UtcNow)
                 throw new AppException("信用卡已過期");
         }
+        public async Task<List<PaymentResponse>> GetAllAsync()
+        {
+            var payments = await _paymentRepository.GetAllAsync();
+            return payments.Select(p =>
+                MapToResponse(p, p.Order?.OrderNo ?? string.Empty)).ToList();
+        }
 
         // ── 產生超商繳費代碼（14位數字）──
         private static string GenerateCVSCode()
@@ -189,17 +195,14 @@ namespace DigitalProject.Services.Payment
             Amount = p.Amount,
             TransactionId = p.TransactionId,
             Status = p.Status,
-            Provider = p.Provider.ToString(),
+            Provider = p.Provider.ToString(),  // ← 付款方式
             PaidAt = p.PaidAt,
             IsVoid = p.IsVoid,
             PaymentCode = p.PaymentCode,
             ExpiresAt = p.ExpiresAt,
+            UserEmail = p.Order?.User?.Email,         
+            UserDisplayName = p.Order?.User?.DisplayName,    
         };
-        public async Task<List<PaymentResponse>> GetAllAsync()
-        {
-            var payments = await _paymentRepository.GetAllAsync();
-            return payments.Select(p =>
-                MapToResponse(p, p.Order?.OrderNo ?? string.Empty)).ToList();
-        }
+
     }
 }

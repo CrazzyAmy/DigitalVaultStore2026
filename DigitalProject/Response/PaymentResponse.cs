@@ -25,5 +25,10 @@ namespace DigitalProject.Response
         //超商繳費用
         public string? PaymentCode { get; set; }
         public DateTime? ExpiresAt { get; set; }
+
+        // 後台新增
+        public string? UserEmail { get; set; }
+        public string? UserDisplayName { get; set; }
     }
+    
 }

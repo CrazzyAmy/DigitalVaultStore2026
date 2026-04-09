@@ -50,6 +50,7 @@ namespace DigitalProject.Repositories.Payment
         public async Task<List<Models.Payment>> GetAllAsync() =>
         await _context.Payments
             .Include(p => p.Order)
+             .ThenInclude(o => o.User)
             .Include(p => p.VoidByUser)
             .OrderByDescending(p => p.PaidAt)
             .ToListAsync();
