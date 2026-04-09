@@ -42,7 +42,8 @@ namespace DigitalProject.Repositories
                     Slug = c.Slug,
                     Description = c.Description,
                     SortOrder = c.SortOrder,
-                    IsVisible = c.IsVisible
+                    IsVisible = c.IsVisible,
+                    ProductCount = c.Products.Count()
                 })
                 .ToListAsync();
         public async Task<Category?> GetByIdAsync(Guid id) =>

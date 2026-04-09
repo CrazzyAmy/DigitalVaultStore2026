@@ -198,6 +198,8 @@ namespace DigitalProject.Services.Payment
             Provider = p.Provider.ToString(),  // ← 付款方式
             PaidAt = p.PaidAt,
             IsVoid = p.IsVoid,
+            VoidReason = p.VoidReason,
+            VoidAt = p.VoidAt,
             PaymentCode = p.PaymentCode,
             ExpiresAt = p.ExpiresAt,
             UserEmail = p.Order?.User?.Email,         

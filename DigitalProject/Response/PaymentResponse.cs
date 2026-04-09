@@ -21,6 +21,8 @@ namespace DigitalProject.Response
         public string Provider { get; set; } = null!;
         public DateTime?PaidAt { get; set; }
         public bool IsVoid { get; set; }
+        public string? VoidReason { get; set; }   
+        public DateTime? VoidAt { get; set; }      
 
         //超商繳費用
         public string? PaymentCode { get; set; }
