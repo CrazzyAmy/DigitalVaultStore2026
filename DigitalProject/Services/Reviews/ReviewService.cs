@@ -130,6 +130,7 @@ namespace DigitalProject.Services.Reviews
             UserDisplayName = review.User?.DisplayName ?? string.Empty,
             ProductId = review.ProductId,
             ProductName = review.Product?.Name ?? string.Empty,
+            UserAvatarUrl = review.User?.AvatarUrl,
             OrderId = review.OrderId,
             Rating = review.Rating,
             Comment = review.Comment,
