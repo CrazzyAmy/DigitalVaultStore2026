@@ -10,5 +10,6 @@ namespace DigitalProject.Interface.Payment
         Task<PaymentResponse> ConfirmCVSPaymentAsync(Guid paymentId);
         Task<PaymentResponse> VoidAsync(Guid adminUserId, Guid paymentId, string reason);
         Task<List<PaymentResponse>> GetAllAsync();
+        Task<CheckoutResponse> CheckoutAsync(Guid userId, CheckoutRequest request);
     }
 }

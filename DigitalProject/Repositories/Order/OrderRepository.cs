@@ -27,16 +27,16 @@ namespace DigitalProject.Repositories
                 .Include(o => o.OrderItems)
                 .ThenInclude(i => i.Product)  // ← 新增，下載功能需要
                 .FirstOrDefaultAsync(o => o.Id == id);
-        
+
 
         public async Task<List<Order>> GetByUserIdAsync(Guid userId) =>
-        
-            await _db.Orders
-             .Include(o => o.OrderItems)
-                .ThenInclude(i => i.Product)
-             .Where(o => o.UserId == userId)
-             .OrderByDescending(o => o.CreatedAt)
-             .ToListAsync();
+           await _db.Orders
+         .Include(o => o.OrderItems)
+             .ThenInclude(i => i.Product)
+         .Include(o => o.Payments)  // ← 新增！過濾殭屍訂單需要
+         .Where(o => o.UserId == userId)
+         .OrderByDescending(o => o.CreatedAt)
+         .ToListAsync();
         //更新訂單狀態
         public async Task UpdateStatusAsync(Guid id, OrderStatus status)
         {

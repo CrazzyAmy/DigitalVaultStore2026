@@ -80,6 +80,7 @@ namespace DigitalProject.Security
                 RefreshToken = refreshToken,
                 Email = user.Email,
                 DisplayName = user.DisplayName,
+                AvatarUrl = user.AvatarUrl,
                 Role = string.Join(",",
                 user.UserRoles.Select(ur => ur.Role.Code))
             };

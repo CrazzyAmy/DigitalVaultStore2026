@@ -44,7 +44,15 @@ namespace DigitalProject.Controllers
             var result = await _paymentService.ConfirmCVSPaymentAsync(id);
             return Ok(result);
         }
+        [HttpPost("checkout")]
+        [Authorize]
+        public async Task<IActionResult> Checkout([FromBody] CheckoutRequest request)
+        {
+            var userId = GetUserId()!.Value;
+            var result = await _paymentService.CheckoutAsync(userId, request);
+            return Ok(result);
+        }
 
-        
+
     }
 }

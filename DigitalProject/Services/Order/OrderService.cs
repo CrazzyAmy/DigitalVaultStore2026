@@ -49,12 +49,21 @@ namespace DigitalProject.Services
         public async Task<List<OrderResponse>> GetUserOrdersAsync(Guid userId)
         {
             var orders = await _orderRepository.GetByUserIdAsync(userId);
-            return orders
-                 .Where(o => o.Status != OrderStatus.Cancelled) // 過濾已取消
-                 .Select(MapToResponse)
-                  .ToList();
 
+            return orders
+                .Where(o =>
+                    o.Status == OrderStatus.Paid ||
+                    o.Status == OrderStatus.Completed ||
+                    (o.Status == OrderStatus.Pending &&
+                     o.Payments.Any(p =>
+                         p.Provider == PaymentProvider.CVS &&
+                         p.IsVoid == false &&
+                         p.Status == PaymentStatus.Pending))
+                )
+                .Select(MapToResponse)
+                .ToList();
         }
+        
 
 
 
