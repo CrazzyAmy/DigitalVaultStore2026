@@ -138,6 +138,12 @@ namespace DigitalProject.Repositories
 
             await _dbcontext.SaveChangesAsync();
         }
-
+        public async Task UpdateAvatarAsync(Guid id, string avatarUrl)
+        {
+            var user = await _dbcontext.Users.FindAsync(id);
+            if (user == null) return;
+            user.AvatarUrl = avatarUrl;
+            await _dbcontext.SaveChangesAsync();
+        }
     }
 }

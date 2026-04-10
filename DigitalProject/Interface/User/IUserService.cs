@@ -10,6 +10,7 @@ namespace DigitalProject.Interface.User
         Task UpdateDisplayNameAsync(Guid userId, UpdateDisplayNameRequest request);
         Task UpdatePasswordAsync(Guid userId, UpdatePasswordRequest request);
         Task<List<PurchaseResponse>> GetPurchasesAsync(Guid userId);
+        Task<string> UploadAvatarAsync(Guid userId, IFormFile file);
 
         // 後台
         Task<IEnumerable<AdminUserResponse>> GetAllAsync();

@@ -89,6 +89,50 @@ namespace DigitalProject.Services.User
                 .ToList();
         }
 
+        public async Task<string> UploadAvatarAsync(Guid userId, IFormFile file)
+        {
+            // 1. 驗證檔案類型
+            var allowedTypes = new[] { "image/jpeg", "image/png", "image/webp" };
+            if (!allowedTypes.Contains(file.ContentType))
+                throw new AppException("僅接受 JPG、PNG、WebP 格式", 400);
+
+            // 2. 驗證檔案大小（2MB）
+            if (file.Length > 2 * 1024 * 1024)
+                throw new AppException("檔案大小不能超過 2MB", 400);
+
+            // 3. 產生唯一檔名
+            var ext = Path.GetExtension(file.FileName).ToLower();
+            var fileName = $"{userId}_{Guid.NewGuid():N}{ext}";
+            var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "avatars");
+
+            // 4. 確認資料夾存在
+            if (!Directory.Exists(folder))
+                Directory.CreateDirectory(folder);
+
+            // 5. 儲存檔案
+            var filePath = Path.Combine(folder, fileName);
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            // 6. 刪除舊頭貼（如果有）
+            var user = await _userRepository.GetByIdAsync(userId);
+            if (user != null && !string.IsNullOrEmpty(user.AvatarUrl))
+            {
+                var oldFileName = Path.GetFileName(user.AvatarUrl);
+                var oldFilePath = Path.Combine(folder, oldFileName);
+                if (File.Exists(oldFilePath))
+                    File.Delete(oldFilePath);
+            }
+
+            // 7. 更新資料庫
+            var avatarUrl = $"/uploads/avatars/{fileName}";
+            await _userRepository.UpdateAvatarAsync(userId, avatarUrl);
+
+            return avatarUrl;
+        }
+
         // ── 後台 ──────────────────────────────────────────────
 
         public async Task<IEnumerable<AdminUserResponse>> GetAllAsync()

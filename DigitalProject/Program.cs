@@ -215,6 +215,16 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+// ── 靜態檔案 ──────────────────────────────────────────────
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        // 快取 7 天
+        ctx.Context.Response.Headers.Append(
+            "Cache-Control", "public,max-age=604800");
+    }
+});
 
 // ⚠️ Pipeline 順序硬性規定：
 // CORS → CookiePolicy → Authentication → TokenBlacklist → Authorization → Controllers
