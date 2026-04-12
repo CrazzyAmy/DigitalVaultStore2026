@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "方案項目", "方案項�
 		RefreshToken.md = RefreshToken.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DigitalProject.Tests", "DigitalProject.Tests\DigitalProject.Tests.csproj", "{5CBD0180-9023-42E5-8897-4114D15B0156}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +22,10 @@ Global
 		{4972A3B2-F785-4F9B-9B27-CFA5B35645E8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4972A3B2-F785-4F9B-9B27-CFA5B35645E8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4972A3B2-F785-4F9B-9B27-CFA5B35645E8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5CBD0180-9023-42E5-8897-4114D15B0156}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5CBD0180-9023-42E5-8897-4114D15B0156}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5CBD0180-9023-42E5-8897-4114D15B0156}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5CBD0180-9023-42E5-8897-4114D15B0156}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

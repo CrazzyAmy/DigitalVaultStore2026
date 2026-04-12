@@ -64,7 +64,7 @@ namespace DigitalProject.Services
             //1.查找User
             var user = await _userRepository.GetByEmailAsync(request.Email);
             if (user == null)
-                throw new AppException("Email或密碼錯誤");
+                throw new AppException("Email或密碼錯誤",401);
             // 2. 驗證密碼
             if (!_passwordHasher.Verify(request.Password, user.PasswordHash!))
                 throw new AppException("Email 或密碼錯誤", 401);

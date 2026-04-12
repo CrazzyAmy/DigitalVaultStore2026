@@ -93,9 +93,9 @@ builder.Services.Configure<CookiePolicyOptions>(options =>
 {
     options.MinimumSameSitePolicy = SameSiteMode.Lax;
     options.HttpOnly = Microsoft.AspNetCore.CookiePolicy.HttpOnlyPolicy.Always;
-    options.Secure = builder.Environment.IsDevelopment()
-                                        ? CookieSecurePolicy.SameAsRequest // Dev 允許 http localhost
-                                        : CookieSecurePolicy.Always;       // Production 強制 https
+    options.Secure = builder.Environment.IsProduction()  // ← 改成 IsProduction
+        ? CookieSecurePolicy.Always        // Production 強制 https
+        : CookieSecurePolicy.SameAsRequest; // Dev / Testing 允許 http
 });
 
 // ── JWT ───────────────────────────────────────────────────────────────────────
@@ -245,3 +245,5 @@ app.UseAuthorization();
 
 app.MapControllers();
 app.Run();
+
+public partial class Program { }

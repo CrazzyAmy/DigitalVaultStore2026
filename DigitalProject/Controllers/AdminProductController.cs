@@ -1,4 +1,5 @@
-﻿using DigitalProject.Interface.Prouduct;
+﻿// Controllers/AdminProductController.cs
+using DigitalProject.Interface.Prouduct;
 using DigitalProject.Request;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -47,6 +48,14 @@ namespace DigitalProject.Controllers
         {
             await _productService.UpdateAsync(id, request);
             return Ok(new { message = "商品已更新" });
+        }
+
+        // PUT /api/admin/product/{id}/publish ← 新增
+        [HttpPut("{id}/publish")]
+        public async Task<IActionResult> Publish(Guid id)
+        {
+            await _productService.PublishAsync(id);
+            return Ok(new { message = "商品已上架" });
         }
 
         // DELETE /api/admin/product/{id}

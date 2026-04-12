@@ -1,4 +1,6 @@
 ﻿using DigitalProject.Interface.Prouduct;
+using DigitalProject.Request;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -6,7 +8,7 @@ namespace DigitalProject.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductController : ControllerBase
+    public class ProductController : BaseController
     {
         private readonly IProductService _productService;
 
@@ -16,9 +18,10 @@ namespace DigitalProject.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] Guid? categoryId)
+        [AllowAnonymous]
+        public async Task<IActionResult> GetAll([FromQuery] ProductQueryRequest query)
         {
-            var products = await _productService.GetAllAsync(categoryId);
+            var products = await _productService.GetAllAsync(query);
             return Ok(products);
         }
         [HttpGet("{id}")]

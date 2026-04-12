@@ -18,19 +18,19 @@ namespace DigitalProject.Controllers
     {
         private readonly IAuthService _authService;
         private readonly ITokenBlacklistService _blacklistService;
-        private void SetRefreshTokenCookie(string refreshToken)
-        {
-            var cookieOptions = new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = true,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(7), // 與 Refresh Token 的有效期一致
-                Path = "/api/auth/refresh",
-                IsEssential = true
-            };
-            Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
-        }
+        //private void SetRefreshTokenCookie(string refreshToken)
+        //{
+        //    var cookieOptions = new CookieOptions
+        //    {
+        //        HttpOnly = true,
+        //        Secure = true,
+        //        SameSite = SameSiteMode.Strict,
+        //        Expires = DateTime.UtcNow.AddDays(7), // 與 Refresh Token 的有效期一致
+        //        Path = "/api/auth/refresh",
+        //        IsEssential = true
+        //    };
+        //    Response.Cookies.Append("refreshToken", refreshToken, cookieOptions);
+        //}
 
         public AuthController(IAuthService authService, ITokenBlacklistService blacklistService)
         {
@@ -176,6 +176,12 @@ namespace DigitalProject.Controllers
             var isDev = HttpContext.RequestServices
                 .GetRequiredService<IWebHostEnvironment>()
                 .IsDevelopment();
+            // Testing 環境也視為非正式環境
+            var isTesting = HttpContext.RequestServices
+                .GetRequiredService<IWebHostEnvironment>()
+                .EnvironmentName == "Testing";
+
+            var secure = !isDev && !isTesting;  // ← Testing 環境不用 Secure
 
             // 因為現在同源了，用 Lax 就好
             Response.Cookies.Append("access_token", accessToken, new CookieOptions
