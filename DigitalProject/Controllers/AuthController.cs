@@ -1,6 +1,7 @@
 ﻿// Controllers/AuthController.cs
 using DigitalProject.Exceptions;
 using DigitalProject.Interface.Auth;
+using DigitalProject.Models;
 using DigitalProject.Request;
 using DigitalProject.Security;
 using Microsoft.AspNetCore.Authentication;
@@ -162,7 +163,8 @@ namespace DigitalProject.Controllers
 
             // 導向前端（不帶 Token，改用 Cookie）
             var frontendUrl = $"http://localhost:5173/auth/callback" +
-                       $"?displayName={Uri.EscapeDataString(authResult.DisplayName)}" +
+                       $"?id={authResult.Id}" +
+                       $"&displayName={Uri.EscapeDataString(authResult.DisplayName)}" +
                        $"&email={Uri.EscapeDataString(authResult.Email)}" +
                        $"&role={authResult.Role}" +
                        $"&avatarUrl={Uri.EscapeDataString(authResult.AvatarUrl ?? "")}";

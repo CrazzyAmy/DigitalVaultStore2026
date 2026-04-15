@@ -271,11 +271,17 @@ namespace DigitalProject.Services.Payment
         }
 
         // ── 查所有付款（後台）──
-        public async Task<List<PaymentResponse>> GetAllAsync()
+        public async Task<PagedResponse<PaymentResponse>> GetAllAsync(PagedRequest request)
         {
-            var payments = await _paymentRepository.GetAllAsync();
-            return payments.Select(p =>
-                MapToResponse(p, p.Order?.OrderNo ?? string.Empty)).ToList();
+            var paged = await _paymentRepository.GetAllPagedAsync(request);
+            return new PagedResponse<PaymentResponse>
+            {
+                Data = paged.Data.Select(p =>
+                    MapToResponse(p, p.Order?.OrderNo ?? string.Empty)).ToList(),
+                Total = paged.Total,
+                Page = paged.Page,
+                PageSize = paged.PageSize
+            };
         }
 
         // ── 作廢付款（管理員）──

@@ -17,7 +17,7 @@ namespace DigitalProject.Services.Prouduct
 
         // ── 前台 ──────────────────────────────────────────────
 
-        public async Task<IEnumerable<ProductResponse>> GetAllAsync(ProductQueryRequest query)
+        public async Task<PagedResponse<ProductResponse>> GetAllAsync(ProductQueryRequest query)
             => await _productRepository.GetAllAsync(query);
 
         public async Task<ProductResponse?> GetByIdAsync(Guid id)
@@ -92,5 +92,6 @@ namespace DigitalProject.Services.Prouduct
 
             await _productRepository.UnpublishAsync(id);
         }
+
     }
 }

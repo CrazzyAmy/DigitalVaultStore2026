@@ -12,6 +12,8 @@ namespace DigitalProject.Interface.Orders
         Task<List<Order>> GetByUserIdAsync(Guid userId);
         Task<Order?> GetByIdAsync(Guid id);
         Task UpdateStatusAsync(Guid id, OrderStatus status);
+        Task<PagedResponse<Order>> GetUserOrdersPagedAsync(Guid userId, PagedRequest request);
+        Task<PagedResponse<Order>> GetAllAdminPagedAsync(PagedRequest request);
 
         // 後台
         Task<List<Order>> GetAllAdminAsync(); 

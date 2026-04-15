@@ -1,5 +1,6 @@
 ﻿// Controllers/AdminReviewController.cs
 using DigitalProject.Interface.Reviews;
+using DigitalProject.Request;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,10 +20,10 @@ namespace DigitalProject.Controllers
 
         // GET /api/admin/review
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] PagedRequest request)
         {
-            var reviews = await _reviewService.GetAllAsync();
-            return Ok(reviews);
+            var result = await _reviewService.GetAllAsync(request);
+            return Ok(result);
         }
 
         // DELETE /api/admin/review/{id}

@@ -11,6 +11,7 @@ namespace DigitalProject.Interface.User
         Task UpdatePasswordAsync(Guid userId, UpdatePasswordRequest request);
         Task<List<PurchaseResponse>> GetPurchasesAsync(Guid userId);
         Task<string> UploadAvatarAsync(Guid userId, IFormFile file);
+        Task<PagedResponse<AdminUserResponse>> GetAllAsync(PagedRequest request);
 
         // 後台
         Task<IEnumerable<AdminUserResponse>> GetAllAsync();

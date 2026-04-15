@@ -171,6 +171,28 @@ namespace DigitalProject.Services
              }).ToList(),
          };
 
+        public async Task<PagedResponse<OrderResponse>> GetUserOrdersAsync(Guid userId, PagedRequest request)
+        {
+            var paged = await _orderRepository.GetUserOrdersPagedAsync(userId, request);
+            return new PagedResponse<OrderResponse>
+            {
+                Data = paged.Data.Select(MapToResponse).ToList(),
+                Total = paged.Total,
+                Page = paged.Page,
+                PageSize = paged.PageSize
+            };
+        }
 
+        public async Task<PagedResponse<OrderResponse>> GetAllAdminAsync(PagedRequest request)
+        {
+            var paged = await _orderRepository.GetAllAdminPagedAsync(request);
+            return new PagedResponse<OrderResponse>
+            {
+                Data = paged.Data.Select(MapToResponse).ToList(),
+                Total = paged.Total,
+                Page = paged.Page,
+                PageSize = paged.PageSize
+            };
+        }
     }
 }

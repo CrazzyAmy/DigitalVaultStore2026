@@ -5,6 +5,7 @@ using DigitalProject.Models;
 using DigitalProject.Request;
 using DigitalProject.Response;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace DigitalProject.Repositories.Prouduct
 {
@@ -18,7 +19,7 @@ namespace DigitalProject.Repositories.Prouduct
         }
 
         // ── 前台：搜尋所有商品 ──
-        public async Task<IEnumerable<ProductResponse>> GetAllAsync(ProductQueryRequest query)
+        public async Task<PagedResponse<ProductResponse>> GetAllAsync(ProductQueryRequest query)
         {
             var products = _context.Products
                 .Include(p => p.Category)
@@ -48,9 +49,24 @@ namespace DigitalProject.Repositories.Prouduct
                 _ => products.OrderByDescending(p => p.CreatedAt)
             };
 
-            var result = await products.ToListAsync();
-            return result.Select(MapToResponse);
+            // 先取總筆數
+            var total = await products.CountAsync();
+
+            // 再分頁
+            var data = await products
+                .Skip((query.Page - 1) * query.PageSize)
+                .Take(query.PageSize)
+                .ToListAsync();
+
+            return new PagedResponse<ProductResponse>
+            {
+                Data = data.Select(MapToResponse).ToList(),
+                Total = total,
+                Page = query.Page,
+                PageSize = query.PageSize
+            };
         }
+
 
         // ── 前台：查單一商品 ──
         public async Task<ProductResponse?> GetByIdAsync(Guid id)
@@ -165,5 +181,7 @@ namespace DigitalProject.Repositories.Prouduct
             CategoryId = p.CategoryId,
             CategoryName = p.Category.Name
         };
+
+       
     }
 }

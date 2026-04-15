@@ -2,11 +2,13 @@
 using DigitalProject.Domain;
 using DigitalProject.Interface.Orders;
 using DigitalProject.Models;
+using DigitalProject.Request;
+using DigitalProject.Response;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigitalProject.Repositories
 {
-    public class OrderRepository : IOrderRepository
+    public class OrderRepository : IOrderRepository 
     {
         private readonly DigitalVaultStoreDbContext _db;
         public OrderRepository(DigitalVaultStoreDbContext db)
@@ -63,5 +65,63 @@ namespace DigitalProject.Repositories
                     .ThenInclude(i => i.Product)
                 .FirstOrDefaultAsync(o => o.Id == id);
 
+        public async Task<PagedResponse<Order>> GetUserOrdersPagedAsync(Guid userId, PagedRequest request)
+        {
+            var queryable = _db.Orders
+            .Include(o => o.OrderItems)
+            .ThenInclude(i => i.Product)
+            .Include(o => o.Payments)
+            .Where(o =>
+                o.UserId == userId &&
+                (o.Status == OrderStatus.Paid ||
+                 o.Status == OrderStatus.Completed ||
+                 (o.Status == OrderStatus.Pending &&
+                  o.Payments.Any(p =>
+                      p.Provider == PaymentProvider.CVS &&
+                      p.IsVoid == false &&
+                      p.Status == PaymentStatus.Pending))))
+            .OrderByDescending(o => o.CreatedAt)
+            .AsQueryable();
+
+            var total = await queryable.CountAsync();
+
+            var data = await queryable
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToListAsync();
+
+            return new PagedResponse<Order>
+            {
+                Data = data,
+                Total = total,
+                Page = request.Page,
+                PageSize = request.PageSize
+            };
+        }
+
+        public async Task<PagedResponse<Order>> GetAllAdminPagedAsync(PagedRequest request)
+        {
+            var queryable = _db.Orders
+            .Include(o => o.User)
+            .Include(o => o.OrderItems)
+                .ThenInclude(i => i.Product)
+            .OrderByDescending(o => o.CreatedAt)
+            .AsQueryable();
+
+            var total = await queryable.CountAsync();
+
+            var data = await queryable
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToListAsync();
+
+            return new PagedResponse<Order>
+            {
+                Data = data,
+                Total = total,
+                Page = request.Page,
+                PageSize = request.PageSize
+            };
+        }
     }
 }

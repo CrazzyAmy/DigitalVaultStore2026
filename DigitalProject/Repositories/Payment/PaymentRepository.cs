@@ -1,6 +1,8 @@
 ﻿using DigitalProject.Data;
 using DigitalProject.Domain;
 using DigitalProject.Interface.Payment;
+using DigitalProject.Request;
+using DigitalProject.Response;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigitalProject.Repositories.Payment
@@ -54,5 +56,30 @@ namespace DigitalProject.Repositories.Payment
             .Include(p => p.VoidByUser)
             .OrderByDescending(p => p.PaidAt)
             .ToListAsync();
+
+        public async Task<PagedResponse<Models.Payment>> GetAllPagedAsync(PagedRequest request)
+        {
+            var queryable = _context.Payments
+                .Include(p => p.Order)
+                    .ThenInclude(o => o.User)
+                .Include(p => p.VoidByUser)
+                .OrderByDescending(p => p.PaidAt)
+                .AsQueryable();
+
+            var total = await queryable.CountAsync();
+
+            var data = await queryable
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToListAsync();
+
+            return new PagedResponse<Models.Payment>
+            {
+                Data = data,
+                Total = total,
+                Page = request.Page,
+                PageSize = request.PageSize
+            };
+        }
     }
 }

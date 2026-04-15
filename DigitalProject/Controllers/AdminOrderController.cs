@@ -20,10 +20,10 @@ namespace DigitalProject.Controllers
 
         // GET /api/admin/order
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] PagedRequest request)
         {
-            var orders = await _orderService.GetAllAdminAsync();
-            return Ok(orders);
+            var result = await _orderService.GetAllAdminAsync(request);
+            return Ok(result);
         }
 
         // GET /api/admin/order/{id}

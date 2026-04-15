@@ -1,5 +1,7 @@
 ﻿// Interface/IReviewRepository.cs
 using DigitalProject.Models;
+using DigitalProject.Request;
+using DigitalProject.Response;
 using System.Threading.Tasks;
 
 namespace DigitalProject.Interface.Reviews
@@ -16,5 +18,6 @@ namespace DigitalProject.Interface.Reviews
         Task<bool> UpdateAsync(Review review);
         Task<bool> DeleteAsync(Guid id);
         Task<List<Review>> GetAllAsync();
+        Task<PagedResponse<Review>> GetAllPagedAsync(PagedRequest request);
     }
 }

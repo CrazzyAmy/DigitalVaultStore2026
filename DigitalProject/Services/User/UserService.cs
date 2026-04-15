@@ -196,5 +196,17 @@ namespace DigitalProject.Services.User
             CreatedAt = u.CreatedAt,
             Roles = u.UserRoles.Select(ur => ur.Role.Code).ToList()
         };
+
+        public async Task<PagedResponse<AdminUserResponse>> GetAllAsync(PagedRequest request)
+        {
+            var paged = await _userRepository.GetAllPagedAsync(request);
+            return new PagedResponse<AdminUserResponse>
+            {
+                Data = paged.Data.Select(MapToAdminResponse).ToList(),
+                Total = paged.Total,
+                Page = paged.Page,
+                PageSize = paged.PageSize
+            };
+        }
     }
 }

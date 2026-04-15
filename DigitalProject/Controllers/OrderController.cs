@@ -30,8 +30,9 @@ namespace DigitalProject.Controllers
             var order = await _orderService.CreateOrderAsync(userId, request);
             return Ok(order);
         }
-        // GET api/order
-        [HttpGet]
+
+        // GET api/order/my
+        [HttpGet("my")]
         [Authorize]
         public async Task<IActionResult> GetMyOrders()
         {
@@ -41,6 +42,7 @@ namespace DigitalProject.Controllers
             var orders = await _orderService.GetUserOrdersAsync(userId);
             return Ok(orders);
         }
+
         // GET api/order/{id}
         [HttpGet("{id}")]
         [Authorize]
@@ -50,7 +52,7 @@ namespace DigitalProject.Controllers
             var order = await _orderService.GetOrderByIdAsync(id);
             if (order == null) return NotFound();
             if (order.UserId != userId)  //新增：驗證本人
-             return Forbid();
+                return Forbid();
             return Ok(order);
         }
 
@@ -72,11 +74,17 @@ namespace DigitalProject.Controllers
             return Ok(result);
         }
 
-
-
-
-
+        // GET api/order
+        // 分頁查詢（保留為根 GET，避免與其它無路徑的 GET 衝突）
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetAll([FromQuery] PagedRequest request)
+        {
+            var userId = GetUserId()!.Value;
+            var result = await _orderService.GetUserOrdersAsync(userId, request);
+            return Ok(result);
+        }
     }
-    }
+}
 
 

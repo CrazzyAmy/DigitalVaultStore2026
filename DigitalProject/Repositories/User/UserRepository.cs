@@ -3,6 +3,8 @@ using DigitalProject.Data;
 using DigitalProject.Domain;
 using DigitalProject.Interface.User;
 using DigitalProject.Models;
+using DigitalProject.Request;
+using DigitalProject.Response;
 using Microsoft.EntityFrameworkCore;
 
 namespace DigitalProject.Repositories
@@ -144,6 +146,26 @@ namespace DigitalProject.Repositories
             if (user == null) return;
             user.AvatarUrl = avatarUrl;
             await _dbcontext.SaveChangesAsync();
+        }
+
+        public async Task<PagedResponse<User?>> GetAllPagedAsync(PagedRequest request)
+        {
+            var queryable = _dbcontext.Users.Include(u => u.UserRoles)
+                .ThenInclude(ur => ur.Role)
+                .OrderByDescending(u => u.CreatedAt)
+                .AsQueryable(); 
+            var total = await queryable.CountAsync();
+            var data = await queryable
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToListAsync();
+            return new PagedResponse<User?>
+            {
+                Data = data,
+                Total = total,
+                Page = request.Page,
+                PageSize = request.PageSize
+            };
         }
     }
 }

@@ -1,4 +1,6 @@
 ﻿using DigitalProject.Models;
+using DigitalProject.Request;
+using DigitalProject.Response;
 
 namespace DigitalProject.Interface.Payment
 {
@@ -10,5 +12,6 @@ namespace DigitalProject.Interface.Payment
         Task<bool> CreateAsync(Models.Payment payment);
         Task<bool> UpdateAsync(Models.Payment payment);
         Task<List<Models.Payment>> GetAllAsync();
+        Task<PagedResponse<Models.Payment>> GetAllPagedAsync(PagedRequest request);
     }
 }

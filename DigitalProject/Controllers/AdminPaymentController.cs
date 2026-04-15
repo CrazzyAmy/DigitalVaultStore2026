@@ -20,9 +20,9 @@ namespace DigitalProject.Controllers
 
         // GET /api/admin/payment
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] PagedRequest request)
         {
-            var payments = await _paymentService.GetAllAsync();
+            var payments = await _paymentService.GetAllAsync(request);
             return Ok(payments);
         }
 

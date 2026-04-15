@@ -11,6 +11,8 @@ namespace DigitalProject.Interface.Orders
         Task<OrderResponse?> GetOrderByIdAsync(Guid id);
         Task<bool> CancelOrderAsync(Guid userId, Guid orderId);
         Task<DownloadResponse> GetDownloadAsync(Guid userId, Guid orderId);
+        Task<PagedResponse<OrderResponse>> GetUserOrdersAsync(Guid userId, PagedRequest request);
+        Task<PagedResponse<OrderResponse>> GetAllAdminAsync(PagedRequest request);
 
         // 後台
         Task<IEnumerable<OrderResponse>> GetAllAdminAsync();

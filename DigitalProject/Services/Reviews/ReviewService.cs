@@ -137,10 +137,16 @@ namespace DigitalProject.Services.Reviews
             CreatedAt = review.CreatedAt
         };
 
-        public async Task<List<ReviewResponse>> GetAllAsync()
+        public async Task<PagedResponse<ReviewResponse>> GetAllAsync(PagedRequest request)
         {
-            var reviews = await _reviewRepository.GetAllAsync();
-            return reviews.Select(MapToResponse).ToList();
+            var paged = await _reviewRepository.GetAllPagedAsync(request);
+            return new PagedResponse<ReviewResponse>
+            {
+                Data = paged.Data.Select(MapToResponse).ToList(),
+                Total = paged.Total,
+                Page = paged.Page,
+                PageSize = paged.PageSize
+            };
         }
     }
 }

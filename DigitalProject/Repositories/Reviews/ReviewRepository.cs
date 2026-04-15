@@ -4,6 +4,8 @@ using DigitalProject.Interface.Reviews;
 using DigitalProject.Models;
 using Microsoft.EntityFrameworkCore;
 using DigitalProject.Domain;
+using DigitalProject.Response;
+using DigitalProject.Request;
 
 namespace DigitalProject.Repositories.Reviews
 {
@@ -91,5 +93,29 @@ namespace DigitalProject.Repositories.Reviews
             .OrderByDescending(r => r.CreatedAt)
             .AsNoTracking()
             .ToListAsync();
+
+        public async Task<PagedResponse<Review>> GetAllPagedAsync(PagedRequest request)
+        {
+            var queryable = _context.Reviews
+                .Include(r => r.User)
+                .Include(r => r.Product)
+                .OrderByDescending(r => r.CreatedAt)
+                .AsQueryable();
+
+            var total = await queryable.CountAsync();
+
+            var data = await queryable
+                .Skip((request.Page - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToListAsync();
+
+            return new PagedResponse<Review>
+            {
+                Data = data,
+                Total = total,
+                Page = request.Page,
+                PageSize = request.PageSize
+            };
+        }
     }
 }

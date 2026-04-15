@@ -20,10 +20,10 @@ namespace DigitalProject.Controllers
 
         // GET /api/admin/user
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] PagedRequest request)
         {
-            var users = await _userService.GetAllAsync();
-            return Ok(users);
+            var result = await _userService.GetAllAsync(request);
+            return Ok(result);
         }
 
         // GET /api/admin/user/{id}

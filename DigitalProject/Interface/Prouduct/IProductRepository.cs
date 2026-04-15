@@ -9,7 +9,7 @@ namespace DigitalProject.Interface.Prouduct
         //前台
         //Task<IEnumerable<ProductResponse>> GetAllAsync(bool onlyPublish = true);
         //Task<IEnumerable<ProductResponse>> GetByCategoryAsync(Guid categoryId);
-        Task<IEnumerable<ProductResponse>> GetAllAsync(ProductQueryRequest query);
+        Task<PagedResponse<ProductResponse>> GetAllAsync(ProductQueryRequest query);
         Task<ProductResponse?> GetByIdAsync(Guid id);
         Task<IEnumerable<ProductResponse>> GetByIdsAsync(List<Guid> ids);
 
@@ -20,5 +20,6 @@ namespace DigitalProject.Interface.Prouduct
         Task PublishAsync(Guid id);                               // ← 新增：上架
         Task UnpublishAsync(Guid id);                             // 下架
         Task<IEnumerable<ProductResponse>> GetAllAdminAsync();
+    
     }
 }

@@ -24,5 +24,6 @@ namespace DigitalProject.Interface.User
         Task ActivateAsync(Guid id);                            
         Task UpdateRoleAsync(Guid userId, Guid roleId);
         Task UpdateAvatarAsync(Guid id, string avatarUrl);
+        Task<PagedResponse<Models.User?>> GetAllPagedAsync(PagedRequest request);
     }
 }

@@ -7,7 +7,7 @@ namespace DigitalProject.Interface.Prouduct
     public interface IProductService
     {
         // 前台
-        Task<IEnumerable<ProductResponse>> GetAllAsync(ProductQueryRequest query);
+        Task<PagedResponse<ProductResponse>> GetAllAsync(ProductQueryRequest query);
         Task<ProductResponse?> GetByIdAsync(Guid id);
 
         // 後台
