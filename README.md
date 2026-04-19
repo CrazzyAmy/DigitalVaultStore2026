@@ -1,7 +1,6 @@
 # Digital Vault
 
-![Tests](https://github.com/CrazzyAmy/DigitalVaultStore2026
-/actions/workflows/test.yml/badge.svg)
+![Tests](https://github.com/CrazzyAmy/DigitalVaultStore2026/actions/workflows/test.yml/badge.svg)
 
 數位商品電商平台
 
