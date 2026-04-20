@@ -1,12 +1,14 @@
 ﻿// Services/Payment/PaymentService.cs
 using DigitalProject.Domain;
 using DigitalProject.Exceptions;
+using DigitalProject.Hubs;
 using DigitalProject.Interface.Orders;
 using DigitalProject.Interface.Payment;
 using DigitalProject.Interface.Prouduct;
 using DigitalProject.Models;
 using DigitalProject.Request;
 using DigitalProject.Response;
+using Microsoft.AspNetCore.SignalR;
 
 namespace DigitalProject.Services.Payment
 {
@@ -14,16 +16,20 @@ namespace DigitalProject.Services.Payment
     {
         private readonly IPaymentRepository _paymentRepository;
         private readonly IOrderRepository _orderRepository;
-        private readonly IProductRepository _productRepository;  
+        private readonly IProductRepository _productRepository;
+        private readonly IHubContext<AdminNotificationHub> _hubContext;
 
         public PaymentService(
             IPaymentRepository paymentRepository,
             IOrderRepository orderRepository,
-            IProductRepository productRepository)  
+            IProductRepository productRepository,
+            IHubContext<AdminNotificationHub> hubContext
+            )  
         {
             _paymentRepository = paymentRepository;
             _orderRepository = orderRepository;
             _productRepository = productRepository;  
+            _hubContext = hubContext;
         }
 
         // ── 舊的付款入口（保留）──
@@ -106,6 +112,19 @@ namespace DigitalProject.Services.Payment
             // 5. 更新訂單狀態為 Paid
             await _orderRepository.UpdateStatusAsync(order.Id, OrderStatus.Paid);
 
+            //推播通知給後台管理員
+            await _hubContext.Clients.Group("Admin")
+                .SendAsync("NewOrder", new OrderNotificationResponse
+                {
+                    OrderId = order.Id,
+                    OrderNo = order.OrderNo,
+                    Amount = totalAmount,
+                    Provider = "CreditCard",
+                    Message = $"新訂單 {order.OrderNo}，金額 ${totalAmount}",
+                    CreatedAt = DateTime.UtcNow
+
+                });
+
             return new CheckoutResponse
             {
                 OrderNo = order.OrderNo,
@@ -139,6 +158,17 @@ namespace DigitalProject.Services.Payment
                 IsVoid = false,
             };
             await _paymentRepository.CreateAsync(payment);
+
+            await _hubContext.Clients.Group("Admins")
+           .SendAsync("NewOrder", new OrderNotificationResponse
+           {
+               OrderId = order.Id,
+               OrderNo = order.OrderNo,
+               Amount = totalAmount,
+               Provider = "CVS",
+               Message = $"新超商訂單 {order.OrderNo}，待繳費 ${totalAmount}",
+               CreatedAt = DateTime.UtcNow
+           });
 
             return new CheckoutResponse
             {

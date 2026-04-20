@@ -1,4 +1,5 @@
 ﻿using DigitalProject.Data;
+using DigitalProject.Hubs;
 using DigitalProject.Interface;
 using DigitalProject.Interface.Auth;
 using DigitalProject.Interface.Category;
@@ -53,6 +54,9 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IPaymentServie, PaymentService>();
+
+// ── SignalR ───────────────────────────────────────────────
+builder.Services.AddSignalR();
 
 // ── Security ──────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IJwtHelper, JwtHelper>();
@@ -242,6 +246,7 @@ app.UseAuthentication();
 app.UseMiddleware<TokenBlacklistMiddleware>();
 
 app.UseAuthorization();
+app.MapHub<AdminNotificationHub>("/hubs/admin-notification");
 
 app.MapControllers();
 app.Run();
