@@ -1,4 +1,8 @@
-# DigitalVaultStore2026
+# Digital Vault
+
+![Tests](https://github.com/CrazzyAmy/DigitalVaultStore2026/actions/workflows/test.yml/badge.svg)
+
+數位商品電商平台
 
 ## 用假的 OrderId 測試評論表單
 ### 原。對完成訂單的評論流程
