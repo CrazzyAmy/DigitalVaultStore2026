@@ -58,6 +58,14 @@ builder.Services.AddScoped<IPaymentServie, PaymentService>();
 // ── SignalR ───────────────────────────────────────────────
 builder.Services.AddSignalR();
 
+// ── Redis ─────────────────────────────────────────────────
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = builder.Configuration["Redis:ConnectionString"];
+    options.InstanceName = "DigitalVault:";
+});
+builder.Services.AddScoped<ICacheService, CacheService>();
+
 // ── Security ──────────────────────────────────────────────────────────────────
 builder.Services.AddScoped<IJwtHelper, JwtHelper>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
