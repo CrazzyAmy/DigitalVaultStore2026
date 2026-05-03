@@ -1,8 +1,9 @@
+# .github/workflows/test.yml
 name: Integration Tests
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -10,8 +11,19 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      redis: # ¡ö ¥[³o¬q
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup .NET 8
@@ -19,11 +31,11 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Restore dependencies
-        run: dotnet restore
+      - name: Restore
+        run: dotnet restore DigitalProject.sln
 
       - name: Build
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build DigitalProject.sln --no-restore --configuration Release
 
-      - name: Run Integration Tests
-        run: dotnet test --no-build --configuration Release --verbosity normal
+      - name: Test
+        run: dotnet test DigitalProject.sln --no-build --configuration Release --verbosity normal

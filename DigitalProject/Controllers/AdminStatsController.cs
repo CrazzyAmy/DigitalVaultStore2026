@@ -26,24 +26,38 @@ namespace DigitalProject.Controllers
         {
             var now = DateTime.UtcNow;
             var firstDayOfMonth = new DateTime(now.Year, now.Month, 1);
-
-            // 總訂單數
-            var totalOrders = await _context.Orders.CountAsync();
+            //只算有效訂單
+            var totalOrders = await _context.Orders
+                 .Where(o =>
+            o.Status == OrderStatus.Paid ||
+            o.Status == OrderStatus.Completed ||
+            (o.Status == OrderStatus.Pending &&
+             o.Payments.Any(p =>
+                 p.Provider == PaymentProvider.CVS &&
+                 p.IsVoid == false &&
+                 p.Status == PaymentStatus.Pending)))
+           .CountAsync();
 
             // 本月營收（已付款 + 已完成）
             var monthlyRevenue = await _context.Orders
-                .Where(o =>
-                    o.CreatedAt >= firstDayOfMonth &&
-                    (o.Status == OrderStatus.Paid ||
-                     o.Status == OrderStatus.Completed))
-                .SumAsync(o => o.TotalAmount);
+         .Where(o =>
+             o.CreatedAt >= firstDayOfMonth &&
+             (o.Status == OrderStatus.Paid ||
+              o.Status == OrderStatus.Completed))
+         .SumAsync(o => o.TotalAmount);
 
             // 總用戶數
             var totalUsers = await _context.Users.CountAsync();
 
             // 待處理訂單（Pending）
             var pendingOrders = await _context.Orders
-                .CountAsync(o => o.Status == OrderStatus.Pending);
+        .Where(o =>
+            o.Status == OrderStatus.Pending &&
+            o.Payments.Any(p =>
+                p.Provider == PaymentProvider.CVS &&
+                p.IsVoid == false &&
+                p.Status == PaymentStatus.Pending))
+        .CountAsync();
 
             // 最近 5 筆訂單
             var recentOrders = await _context.Orders
