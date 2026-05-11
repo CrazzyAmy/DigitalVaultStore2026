@@ -6,6 +6,8 @@
 這應該就是我們當初做這個project的初衷吧
 還有連線資料庫不會因為我跟你鬧不和我就關掉只要你還沒找到工作我資料庫永遠都是開著!祝福你順順利利開開心心去找工作!
 有任何問題可以用Readme或則看你願不願意再把我當同學來詢問了!
+
+
 ![Tests](https://github.com/DrinkAsWater/DigitalVault2026/actions/workflows/test.yml/badge.svg)
 
 > 數位商品電商平台 — 即購即用，無需等待配送
