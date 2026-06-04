@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
-      redis: # ¡ö ¥[³o¬q
+      redis: # ï¿½ï¿½ ï¿½[ï¿½oï¿½q
         image: redis:7-alpine
         ports:
           - 6379:6379
@@ -32,10 +32,10 @@ jobs:
           dotnet-version: 8.0.x
 
       - name: Restore
-        run: dotnet restore DigitalProject.sln
+        run: dotnet restore BackEnd/DigitalProject.sln
 
       - name: Build
-        run: dotnet build DigitalProject.sln --no-restore --configuration Release
+        run: dotnet build BackEnd/DigitalProject.sln --no-restore --configuration Release
 
       - name: Test
-        run: dotnet test DigitalProject.sln --no-build --configuration Release --verbosity normal
+        run: dotnet test BackEnd/DigitalProject.sln --no-build --configuration Release --verbosity normal
