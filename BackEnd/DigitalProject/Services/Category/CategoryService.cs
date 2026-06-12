@@ -76,7 +76,6 @@ namespace DigitalProject.Services
             await _categoryRepository.UpdateAsync(id, request);
             // 清除分類快取
             await _cacheService.RemoveAsync("categories:all");
-            await _categoryRepository.UpdateAsync(id, request);
         }
 
         public async Task DeleteAsync(Guid id)

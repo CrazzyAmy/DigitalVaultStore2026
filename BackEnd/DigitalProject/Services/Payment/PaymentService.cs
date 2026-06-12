@@ -159,7 +159,7 @@ namespace DigitalProject.Services.Payment
             };
             await _paymentRepository.CreateAsync(payment);
 
-            await _hubContext.Clients.Group("Admins")
+            await _hubContext.Clients.Group("Admin")
            .SendAsync("NewOrder", new OrderNotificationResponse
            {
                OrderId = order.Id,
@@ -269,12 +269,14 @@ namespace DigitalProject.Services.Payment
         }
 
         // ── 超商繳費確認 ──
-        public async Task<PaymentResponse> ConfirmCVSPaymentAsync(Guid paymentId)
+        public async Task<PaymentResponse> ConfirmCVSPaymentAsync(Guid paymentId, Guid userId)
         {
             var payment = await _paymentRepository.GetByIdAsync(paymentId);
 
             if (payment == null)
                 throw new AppException("付款記錄不存在", 404);
+            if (payment.Order?.UserId != userId)
+                throw new AppException("無權限操作此付款", 403);
             if (payment.Provider != PaymentProvider.CVS)
                 throw new AppException("此付款不是超商繳費");
             if (payment.Status != PaymentStatus.Pending)
@@ -293,8 +295,14 @@ namespace DigitalProject.Services.Payment
         }
 
         // ── 取得訂單付款紀錄 ──
-        public async Task<List<PaymentResponse>> GetByOrderIdAsync(Guid orderId)
+        public async Task<List<PaymentResponse>> GetByOrderIdAsync(Guid orderId, Guid userId)
         {
+            var order = await _orderRepository.GetByIdAsync(orderId);
+            if (order == null)
+                throw new AppException("訂單不存在", 404);
+            if (order.UserId != userId)
+                throw new AppException("無權限查詢此訂單", 403);
+
             var payments = await _paymentRepository.GetByOrderIdAsync(orderId);
             return payments.Select(p =>
                 MapToResponse(p, p.Order?.OrderNo ?? string.Empty)).ToList();

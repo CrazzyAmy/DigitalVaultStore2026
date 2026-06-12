@@ -27,6 +27,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
 using System.Text;
 using System.Text.Json;
 
@@ -59,10 +60,15 @@ builder.Services.AddScoped<IPaymentServie, PaymentService>();
 builder.Services.AddSignalR();
 
 // ── Redis ─────────────────────────────────────────────────
+var redisConnectionString = builder.Configuration["Redis:ConnectionString"];
+var redisOptions = ConfigurationOptions.Parse(redisConnectionString!);
+redisOptions.AbortOnConnectFail = false;
+builder.Services.AddSingleton<IConnectionMultiplexer>(
+    ConnectionMultiplexer.Connect(redisOptions));
 builder.Services.AddStackExchangeRedisCache(options =>
 {
-    options.Configuration = builder.Configuration["Redis:ConnectionString"];
-    options.InstanceName = "DigitalVault:";
+    options.Configuration = redisConnectionString;
+    options.InstanceName = CacheService.InstanceName;
 });
 builder.Services.AddScoped<ICacheService, CacheService>();
 
